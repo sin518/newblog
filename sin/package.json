@@ -2,6 +2,7 @@
   "name": "blue-binary",
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "bun@1.3.0",
   "description": "A Chirpy-inspired, single-template, multilingual Astro v6 theme with Tailwind v4, daisyUI, MDX, Pagefind, and Giscus.",
   "license": "MIT",
   "engines": {
