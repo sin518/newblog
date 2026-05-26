@@ -1,203 +1,97 @@
-# Chirping Astro Starter
+# Sin's Blog
 
-A minimal starter template for [Chirping Astro](https://github.com/kannansuresh/chirping-astro) — a Chirpy-inspired, multilingual **Astro v6** blog theme with **Tailwind CSS v4**, **daisyUI v5**, **Pagefind** search, **Giscus** comments, and **KaTeX** math.
+个人技术博客，记录全栈开发、AI Agent 和各种技术探索。
 
-> **Live demo:** [https://kannansuresh.github.io/chirping-astro](https://kannansuresh.github.io/chirping-astro)
+🔗 **在线访问：** [https://sin518.github.io/newblog](https://sin518.github.io/newblog)
 
-## Quick Start
+## 技术栈
 
-### Option 1: Astro CLI (recommended)
+| 技术 | 说明 |
+| --- | --- |
+| [Astro](https://astro.build) v6 | 静态站点生成器 |
+| [Tailwind CSS](https://tailwindcss.com) v4 | 原子化 CSS 框架 |
+| [daisyUI](https://daisyui.com) v5 | Tailwind 组件库 |
+| [MDX](https://mdxjs.com) | Markdown + JSX 写文章 |
+| [Pagefind](https://pagefind.app) | 静态站内搜索 |
+| [Giscus](https://giscus.app) | GitHub Discussions 评论系统 |
+| [KaTeX](https://katex.org) | 数学公式渲染 |
+| [Bun](https://bun.sh) | 包管理器 + 运行时 |
+
+## 功能特性
+
+- 中英双语支持（i18n）
+- 明 / 暗主题切换
+- 站内全文搜索
+- 文章评论（基于 GitHub Discussions）
+- RSS 订阅 & Sitemap
+- 自动生成 OG 图片
+- 代码高亮（Expressive Code）
+- KaTeX 数学公式
+- 响应式布局
+
+## 本地开发
 
 ```bash
-bunx create-astro@latest --template kannansuresh/chirping-astro-starter
-```
-
-The wizard will prompt you for a project name, install dependencies, and initialize git.
-
-### Option 2: Clone directly
-
-```bash
-git clone https://github.com/kannansuresh/chirping-astro-starter.git my-blog
-cd my-blog
+# 安装依赖
 bun install
-```
 
-### Start dev server
-
-```bash
+# 启动开发服务器
 bun dev
+# 访问 http://localhost:4321
+
+# 构建生产版本
+bun run build
+
+# 预览构建结果
+bun preview
 ```
 
-Open [http://localhost:4321](http://localhost:4321) to see your site.
+## 项目结构
 
-## Configuration
+```
+├── src/
+│   ├── components/       # Astro 组件
+│   │   └── islands/      # 交互式岛屿组件
+│   ├── content/
+│   │   ├── posts/zh/     # 中文博客文章
+│   │   ├── posts/en/     # English blog posts
+│   │   └── pages/        # 静态页面（关于、隐私）
+│   ├── layouts/          # 页面布局
+│   ├── pages/            # 路由页面
+│   ├── i18n/             # 国际化配置
+│   ├── plugins/          # Remark/Rehype 插件
+│   ├── styles/           # 全局样式
+│   ├── utils/            # 工具函数
+│   └── config.ts         # 站点配置
+├── public/               # 静态资源
+├── astro.config.mjs      # Astro 配置
+└── package.json
+```
 
-1. Edit `src/config.ts` to set your site title, author name, and social links.
-2. Copy `.env.example` to `.env` and fill in your values.
-3. Replace `src/assets/images/site/avatar.svg` with your own avatar.
-4. Replace `src/assets/images/site/favicon.svg` with your own favicon.
-5. Start writing posts in `src/content/posts/en/`.
+## 写文章
 
-## Writing Posts
-
-Create a new `.md` or `.mdx` file in `src/content/posts/en/`:
+在 `src/content/posts/zh/` 下创建 `.md` 或 `.mdx` 文件：
 
 ```markdown
 ---
-title: 'My First Post'
-description: 'A short summary of this post.'
+title: '文章标题'
+description: '简短描述'
 pubDate: 2026-01-01
-tags: [hello, world]
-categories: [General]
+tags: [标签1, 标签2]
+categories: [分类]
 ---
 
-Your content here...
+文章正文...
 ```
 
-See the included sample post for all available frontmatter fields.
+## 部署
 
-## Deploy to GitHub Pages
+推送到 `main` 分支后自动通过 GitHub Actions 构建并部署到 GitHub Pages。
 
-The included `.github/workflows/deploy.yml` builds your site on every push to `main`.
-Deployment runs automatically once GitHub Pages is enabled for the repository.
-To set it up:
+## 配置
 
-### 1. Enable GitHub Pages
+站点配置集中在 `src/config.ts`，环境变量参考 `.env.example`。
 
-Go to your repo **Settings → Pages → Source** and select **GitHub Actions**.
+## 许可
 
-> If Pages is not enabled yet, the workflow still builds but skips the deploy step.
-
-### 2. Set environment variables (optional)
-
-Go to **Settings → Environments → github-pages → Environment variables** and add any of:
-
-| Variable                    | Purpose                               | Default                        |
-| --------------------------- | ------------------------------------- | ------------------------------ |
-| `SITE_URL`                  | Your production URL                   | `https://<username>.github.io` |
-| `BASE_PATH`                 | Sub-path for the site                 | `/<repo-name>`                 |
-| `PUBLIC_GITHUB_HANDLE`      | GitHub profile link in sidebar        | Your GitHub username           |
-| `PUBLIC_TWITTER_HANDLE`     | Twitter/X link in sidebar             | _(none)_                       |
-| `PUBLIC_CONTACT_EMAIL`      | Email link in sidebar                 | _(none)_                       |
-| `PUBLIC_GISCUS_ENABLED`     | Enable comments (`true`/`false`)      | _(none)_                       |
-| `PUBLIC_GISCUS_REPO`        | `owner/repo` for Giscus               | _(none)_                       |
-| `PUBLIC_GISCUS_REPO_ID`     | From [giscus.app](https://giscus.app) | _(none)_                       |
-| `PUBLIC_GISCUS_CATEGORY`    | Discussion category name              | _(none)_                       |
-| `PUBLIC_GISCUS_CATEGORY_ID` | From [giscus.app](https://giscus.app) | _(none)_                       |
-
-> **Note:** All variables are optional. The site builds and deploys with zero configuration — variables just enable extra features.
-
-### 3. Customize the Privacy Policy (optional)
-
-Edit the bilingual privacy policy templates:
-
-```text
-src/content/pages/zh/privacy.md
-src/content/pages/en/privacy.md
-```
-
-Replace placeholder values in `[BRACKETS]` (site name, contact email, etc.).
-The privacy policy appears in the footer with a link — disable it by setting
-`showPrivacyPolicy: false` in `src/config.ts`.
-
-### 4. Push to `main`
-
-That's it. The workflow will build and deploy your site. Your site will be available at `https://<username>.github.io/<repo-name>/`.
-
-### 5. Run (or re-run) the deploy workflow after enabling Pages
-
-If your first workflow run happened before step 1, deploy was skipped by design.
-After enabling Pages, trigger deployment with either option:
-
-1. Push any new commit to `main`.
-2. Or go to **Actions → Deploy to GitHub Pages → Run workflow**.
-
-The next run will execute the deploy job and publish your site.
-
-## Custom Domain
-
-### Dedicated domain for this site
-
-To use your own domain (e.g., `https://blog.example.com`) exclusively for this site:
-
-1. Set `SITE_URL` = `https://blog.example.com`
-2. Set `BASE_PATH` to empty (or `/`).
-3. Configure your DNS — see [GitHub's custom domain docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
-
-### Using a custom domain on your GitHub user site
-
-If your GitHub user site (`<username>.github.io`) already points to a custom domain (e.g., `example.com`), then **all project sites** under that account are automatically served under that domain:
-
-```text
-username.github.io        → example.com          (user site)
-username.github.io/blog   → example.com/blog     (this repo)
-```
-
-In this case, you don't need any extra DNS setup. Just set:
-
-- `SITE_URL` = `https://example.com`
-- `BASE_PATH` = `/<repo-name>` (e.g., `/blog`)
-
-The deploy workflow already defaults `BASE_PATH` to `/<repo-name>`, so if you're happy with `example.com/<repo-name>/` as your blog URL, **no configuration is needed at all** — it works out of the box.
-
-## Giscus Comments
-
-To enable GitHub Discussions-powered comments on posts:
-
-1. Install the [Giscus app](https://github.com/apps/giscus) on your repo.
-2. Go to [giscus.app](https://giscus.app), fill in your repo details, and copy the generated values.
-3. Add these environment variables in **Settings → Environments → github-pages**:
-   - `PUBLIC_GISCUS_ENABLED` = `true`
-   - `PUBLIC_GISCUS_REPO` = `your-username/your-repo`
-   - `PUBLIC_GISCUS_REPO_ID` = _(from giscus.app)_
-   - `PUBLIC_GISCUS_CATEGORY` = `Announcements` _(or your chosen category)_
-   - `PUBLIC_GISCUS_CATEGORY_ID` = _(from giscus.app)_
-
-## Single Language Mode
-
-This starter ships with Chinese + English (i18n). To run a single-language site:
-
-1. Open `src/config.ts` and set `multilingual: false`.
-2. Keep only one locale in `SITE.locales`.
-3. Delete the unused locale folders under `src/content/posts/` and `src/content/pages/`.
-
-The language switcher will disappear and all `hreflang` tags are omitted.
-
-## Customization
-
-| What                            | Where                                   |
-| ------------------------------- | --------------------------------------- |
-| Site title, description, author | `src/config.ts` → `SITE`                |
-| Navigation links                | `src/config.ts` → `NAV`                 |
-| Social links                    | `src/config.ts` → `SOCIAL`              |
-| Avatar image                    | `src/assets/images/site/avatar.svg`     |
-| Favicon                         | `src/assets/images/site/favicon.svg`    |
-| Default OG image                | `src/assets/images/site/og-default.svg` |
-| Global styles                   | `src/styles/global.css`                 |
-| Theme colors                    | daisyUI theme tokens in `global.css`    |
-
-## Commands
-
-| Command          | Action                               |
-| ---------------- | ------------------------------------ |
-| `bun dev`        | Start dev server at `localhost:4321` |
-| `bun run build`  | Build production site to `./dist/`   |
-| `bun preview`    | Preview production build locally     |
-| `bun run lint`   | Run ESLint                           |
-| `bun run format` | Format with Prettier                 |
-
-## Documentation
-
-For full documentation on all features (i18n, dark mode, math, comments, OG images, etc.), see the [main repository README](https://github.com/kannansuresh/chirping-astro#readme).
-
-## Contributing & Issues
-
-> **This starter repository is automatically synced from the [main Chirping Astro repository](https://github.com/kannansuresh/chirping-astro).** Please do not open pull requests here — changes will be overwritten on the next sync.
-
-- **Found a bug?** [Open an issue](https://github.com/kannansuresh/chirping-astro/issues) on the main repository.
-- **Want to contribute?** See the [contributing guide](https://github.com/kannansuresh/chirping-astro/blob/main/CONTRIBUTING.md) on the main repository.
-- **Have a question?** Use [Discussions](https://github.com/kannansuresh/chirping-astro/discussions) on the main repository.
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
+[MIT](./LICENSE)
