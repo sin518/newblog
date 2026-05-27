@@ -10,12 +10,13 @@
     }
   ],
   "entries": {
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/pages/en/about.md": "pages",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/pages/en/privacy.md": "pages",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/pages/zh/about.md": "pages",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/pages/zh/privacy.md": "pages",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/posts/en/getting-started.md": "posts",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/posts/zh/ai-sse-chat.md": "posts",
-    "file:///users/sin/desktop/%e5%8d%9a%e5%ae%a2/src/content/posts/zh/sbsm.md": "posts"
+    "file:///users/sin/desktop/sin/src/content/pages/en/about.md": "pages",
+    "file:///users/sin/desktop/sin/src/content/pages/en/privacy.md": "pages",
+    "file:///users/sin/desktop/sin/src/content/pages/zh/about.md": "pages",
+    "file:///users/sin/desktop/sin/src/content/pages/zh/privacy.md": "pages",
+    "file:///users/sin/desktop/sin/src/content/posts/en/getting-started.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/sbsm.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/ai-sse-chat.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/asr-and-tts-nest-service.md": "posts"
   }
 }
