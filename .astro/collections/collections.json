@@ -14,9 +14,11 @@
     "file:///users/sin/desktop/sin/src/content/pages/en/privacy.md": "pages",
     "file:///users/sin/desktop/sin/src/content/pages/zh/about.md": "pages",
     "file:///users/sin/desktop/sin/src/content/pages/zh/privacy.md": "pages",
-    "file:///users/sin/desktop/sin/src/content/posts/en/getting-started.md": "posts",
-    "file:///users/sin/desktop/sin/src/content/posts/zh/sbsm.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/en/%e7%ae%80%e5%8e%86.md": "posts",
     "file:///users/sin/desktop/sin/src/content/posts/zh/ai-sse-chat.md": "posts",
-    "file:///users/sin/desktop/sin/src/content/posts/zh/asr-and-tts-nest-service.md": "posts"
+    "file:///users/sin/desktop/sin/src/content/posts/zh/asr-and-tts-nest-service.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/sbsm.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/sbsm-%e9%a1%b9%e7%9b%ae%e9%9d%a2%e8%af%95%e9%97%ae%e9%a2%98.md": "posts",
+    "file:///users/sin/desktop/sin/src/content/posts/zh/vercel-ai-sdk+langchain%20%e5%ae%9e%e7%8e%b0%e6%b5%81%e5%bc%8f%e7%bb%84%e4%bb%b6%e6%b8%b2%e6%9f%93.md": "posts"
   }
 }

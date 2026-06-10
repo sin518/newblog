@@ -19,21 +19,21 @@ toc: true
 
 核心价值在于：通过 AGUI 协议标准化了 AI Agent 与前端的通信契约，将传统的"请求-等待-响应"模式升级为"推理即渲染"的实时交互范式，显著提升了用户对 AI Agent 行为的可观测性与交互体验。
 
-![alt text](../../../../图片/vercel-ai-sdk+langchain/c7abe65c6aff3ef32d65e8bdaf25b0f4.png)
+![](https://cdn.jsdelivr.net/gh/sin518/newblog@main/img/c7abe65c6aff3ef32d65e8bdaf25b0f4.png)
 
 通过前端页面，根据用户输入的信息调用大模型和博查搜索到用户要求的信息
 
-![alt text](50d64cb9d50a938751800561b3c00430.png)
+![](https://cdn.jsdelivr.net/gh/sin518/newblog@main/img/50d64cb9d50a938751800561b3c00430.png)
 
 基于 @ai-sdk/react 对 SSE 流进行协议级解析，针对markdown类型采用表格渲染
 
-![alt text](4631b71447208cf70cf2539a6e09708b.png)
+![](https://cdn.jsdelivr.net/gh/sin518/newblog@main/img/4631b71447208cf70cf2539a6e09708b.png)
 
 增加一个 tool 来实现让大模型发送邮件
 
-![alt text](dfe75c54470bb8dff3cd31047584f202.png)
+![](https://cdn.jsdelivr.net/gh/sin518/newblog@main/img/dfe75c54470bb8dff3cd31047584f202.png)
 
-![alt text](50576e2b96d616eaea2c59f6df10ac28.png)
+![](https://cdn.jsdelivr.net/gh/sin518/newblog@main/img/50576e2b96d616eaea2c59f6df10ac28.png)
 
 ##后端介绍
 
