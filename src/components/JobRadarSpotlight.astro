@@ -1,0 +1,111 @@
+---
+import type { Locale } from "~/config";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const enabled = import.meta.env.PUBLIC_JOB_RADAR_ENABLED !== "false";
+const isEnglish = locale === "en";
+---
+
+{
+  enabled && (
+    <section
+      class="job-radar-spotlight"
+      aria-labelledby="job-radar-spotlight-title"
+    >
+      <div>
+        <p class="job-radar-spotlight__eyebrow">
+          {isEnglish ? "Personal tool" : "个人工具"}
+        </p>
+        <h2 id="job-radar-spotlight-title">
+          {isEnglish ? "Job Radar" : "职位雷达"}
+        </h2>
+        <p>
+          {isEnglish
+            ? "Track fresh job listings and review your personal shortlist."
+            : "读取最新招聘信息，集中查看你的个人职位清单。"}
+        </p>
+      </div>
+      <a class="job-radar-spotlight__link" href="https://jobs.sin518.cfd/">
+        {isEnglish ? "Open Job Radar" : "打开职位雷达"}
+        <span aria-hidden="true">→</span>
+      </a>
+    </section>
+  )
+}
+
+<style>
+  .job-radar-spotlight {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-block: 0 1.5rem;
+    border: 1px solid
+      color-mix(in oklab, var(--color-primary) 24%, var(--color-base-300));
+    border-radius: 0.75rem;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    background: color-mix(
+      in oklab,
+      var(--color-primary) 6%,
+      var(--color-base-100)
+    );
+    color: var(--color-base-content);
+  }
+
+  .job-radar-spotlight__eyebrow {
+    margin: 0 0 0.25rem;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .job-radar-spotlight h2 {
+    margin: 0;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+  }
+
+  .job-radar-spotlight p:last-child {
+    margin: 0.35rem 0 0;
+    color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  }
+
+  .job-radar-spotlight__link {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .job-radar-spotlight__link:hover {
+    filter: brightness(1.08);
+  }
+
+  .job-radar-spotlight__link:focus-visible {
+    outline: 3px solid var(--color-warning);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 40rem) {
+    .job-radar-spotlight {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .job-radar-spotlight__link {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+</style>

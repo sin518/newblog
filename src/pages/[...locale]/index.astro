@@ -1,10 +1,11 @@
 ---
-import BaseLayout from '~/layouts/BaseLayout.astro';
-import PostList from '~/components/PostList.astro';
-import Pagination from '~/components/Pagination.astro';
-import { SITE } from '~/config';
-import { localizedPath } from '~/i18n/utils';
-import { getPosts } from '~/utils/posts';
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import PostList from "~/components/PostList.astro";
+import Pagination from "~/components/Pagination.astro";
+import JobRadarSpotlight from "~/components/JobRadarSpotlight.astro";
+import { SITE } from "~/config";
+import { localizedPath } from "~/i18n/utils";
+import { getPosts } from "~/utils/posts";
 
 export function getStaticPaths() {
   return SITE.locales.map((l) => ({
@@ -20,10 +21,16 @@ const lastPage = Math.max(1, Math.ceil(posts.length / pageSize));
 const currentPage = 1;
 const pagePosts = posts.slice(0, pageSize);
 
-const hrefForPage = (n: number) => localizedPath(n === 1 ? '/' : `/page/${n}/`, locale);
+const hrefForPage = (n: number) =>
+  localizedPath(n === 1 ? "/" : `/page/${n}/`, locale);
 ---
 
-<BaseLayout title={SITE.title} description={SITE.description} pathWithoutLocale="/">
+<BaseLayout
+  title={SITE.title}
+  description={SITE.description}
+  pathWithoutLocale="/"
+>
+  <JobRadarSpotlight locale={locale} />
   <PostList posts={pagePosts} locale={locale} />
   <Pagination
     currentPage={currentPage}
