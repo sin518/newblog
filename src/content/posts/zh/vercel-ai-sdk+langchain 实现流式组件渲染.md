@@ -1,8 +1,8 @@
 ---
-title: "Vercel AI SDK + LangChain 实现流式组件渲染"
-description: "基于 AGUI 协议实现了流式渲染文本、tool call 组件的效果"
+title: "AGUI 协议"
+description: "Vercel AI SDK + LangChain 实现流式组件渲染"
 pubDate: 2026-06-10
-tags: [langchain, NestJS, AGUI, SSE]
+tags: [langchain, NestJS, AGUI, SSE, Vite, Vercel AI SDK, Streamdown]
 categories: [开发]
 translationKey: getting-started
 pinned: true
@@ -69,7 +69,7 @@ toc: true
 |------|------|
 | **前端框架** | React 19、TypeScript 6 |
 | **构建工具** | Vite 8（Oxc 编译）、ESM Module |
-| **AI 通信** | Vercel AI SDK v6ï¼useChatãDefaultChatTransportãHTTP Streamingï¼ |
+| **AI 通信** | Vercel AI SDK |
 | **流式渲染** | Streamdown（流式 Markdown）、Shiki（代码高亮）、Mermaid（图表） |
 | **样式方案** | Tailwind CSS v4（CSS-first 配置）、CSS Custom Properties 设计系统、Dark Mode |
 | **工程化** | ESLint 10、TypeScript Strict 模式 |

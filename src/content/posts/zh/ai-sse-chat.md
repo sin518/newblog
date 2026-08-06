@@ -1,8 +1,8 @@
 ---
 title: "智能定时任务助手"
-description: "agent定时任务"
+description: "Nest + tool 实现 OpenClaw 同款定时任务功能"
 pubDate: 2026-05-21
-tags: [langchain, NestJS]
+tags: [langchain, NestJS, MySQL, Nodemailer, SSE]
 categories: [开发]
 translationKey: getting-started
 pinned: true

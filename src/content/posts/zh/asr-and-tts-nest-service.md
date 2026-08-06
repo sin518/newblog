@@ -1,14 +1,15 @@
 ---
-title: "ASR & TTS 语音交互 AI 助手服务"
-description: "语音交互"
+title: "ASR + 流式 TTS"
+description: "给 Agent 加上语音交互"
 pubDate: 2026-05-27
-tags: [langchain, NestJS]
+tags: [langchain, NestJS,WebSocket,SSE,DI]
 categories: [开发]
 translationKey: getting-started
 pinned: true
 toc: true
 ---
-# 
+
+#
 
 ## 项目简介
 
@@ -16,15 +17,15 @@ toc: true
 
 ## 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| **后端框架** | NestJS 11、TypeScript 5.7、Node.js |
-| **AI / LLM** | LangChain (Chain 组合模式)、OpenAI Compatible API |
-| **语音服务** | 腾讯云 ASR (语音识别)、腾讯云 TTS (语音合成) |
-| **实时通信** | WebSocket (ws)、SSE (Server-Sent Events) |
-| **架构模式** | 事件驱动 (EventEmitter2)、依赖注入 (DI)、模块化设计 |
-| **前端** | 原生 HTML5 (MediaRecorder API、MediaSource API、EventSource) |
-| **工具链** | pnpm、ESLint、Prettier、Jest |
+| 类别         | 技术                                                         |
+| ------------ | ------------------------------------------------------------ |
+| **后端框架** | NestJS 11、TypeScript 5.7、Node.js                           |
+| **AI / LLM** | LangChain (Chain 组合模式)、OpenAI Compatible API            |
+| **语音服务** | 腾讯云 ASR (语音识别)、腾讯云 TTS (语音合成)                 |
+| **实时通信** | WebSocket (ws)、SSE (Server-Sent Events)                     |
+| **架构模式** | 事件驱动 (EventEmitter2)、依赖注入 (DI)、模块化设计          |
+| **前端**     | 原生 HTML5 (MediaRecorder API、MediaSource API、EventSource) |
+| **工具链**   | pnpm、ESLint、Prettier、Jest                                 |
 
 ## 项目结构
 
@@ -94,15 +95,15 @@ WebSocket 转发至客户端 → MediaSource 实时播放
 
 ## 环境变量
 
-| 变量名 | 说明 |
-|--------|------|
-| `SECRET_ID` | 腾讯云 SecretId |
-| `SECRET_KEY` | 腾讯云 SecretKey |
-| `APP_ID` | 腾讯云应用 ID |
-| `TTS_VOICE_TYPE` | TTS 音色类型 |
-| `OPENAI_API_KEY` | OpenAI API Key |
+| 变量名            | 说明                           |
+| ----------------- | ------------------------------ |
+| `SECRET_ID`       | 腾讯云 SecretId                |
+| `SECRET_KEY`      | 腾讯云 SecretKey               |
+| `APP_ID`          | 腾讯云应用 ID                  |
+| `TTS_VOICE_TYPE`  | TTS 音色类型                   |
+| `OPENAI_API_KEY`  | OpenAI API Key                 |
 | `OPENAI_BASE_URL` | OpenAI API Base URL (兼容接口) |
-| `MODEL_NAME` | 使用的模型名称 |
+| `MODEL_NAME`      | 使用的模型名称                 |
 
 ## 启动方式
 
