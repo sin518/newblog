@@ -54,8 +54,8 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
       <button type="button" role="tab" class="tab tab-active font-medium" data-admin-tab="posts">
         文章管理
       </button>
-      <button type="button" role="tab" class="tab font-medium" data-admin-tab="panel">
-        右侧栏目
+      <button type="button" role="tab" class="tab font-medium" data-admin-tab="sidebar">
+        左侧栏目
       </button>
     </div>
 
@@ -256,31 +256,127 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
       </form>
     </section>
 
-    {/* Panel Tools Management View */}
-    <section id="view-panel" class="hidden space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="text-base-content/70 text-sm">
-          管理网站右侧栏目的个人工具与快捷卡片（如“职位雷达”），支持新增、编辑、删除与隐藏控制。
-        </p>
-        <button type="button" id="btn-new-panel-item" class="btn btn-primary btn-sm gap-1.5">
-          <Icon name="lucide:plus" width={15} height={15} />
-          新增栏目卡片
-        </button>
+    {/* Left Sidebar Management View */}
+    <section id="view-sidebar" class="hidden space-y-6">
+      {/* 1. Profile */}
+      <div class="border-base-300 bg-base-100 rounded-xl border p-4 shadow-sm sm:p-5">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-base font-bold">个人资料</h2>
+          <button type="button" id="btn-save-profile" class="btn btn-primary btn-xs">
+            保存资料
+          </button>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">站点名称</span>
+            <input type="text" id="sb-title" class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">个人简介</span>
+            <input type="text" id="sb-bio" class="input input-bordered input-sm w-full" />
+          </label>
+        </div>
       </div>
 
-      <div
-        id="panel-items-container"
-        class="border-base-300 bg-base-100 divide-base-300 divide-y overflow-hidden rounded-xl border shadow-sm"
-      >
-        <div class="text-base-content/60 p-8 text-center text-sm">正在加载右侧栏目...</div>
+      {/* 2. Navigation Items */}
+      <div class="border-base-300 bg-base-100 rounded-xl border shadow-sm">
+        <div class="border-base-300 flex items-center justify-between border-b px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold">导航菜单</h2>
+          <button type="button" id="btn-add-nav" class="btn btn-primary btn-xs gap-1">
+            <Icon name="lucide:plus" width={13} height={13} />
+            新增导航
+          </button>
+        </div>
+        <div id="sb-nav-list" class="divide-base-300 divide-y"></div>
+      </div>
+
+      {/* 3. Personal Tools */}
+      <div class="border-base-300 bg-base-100 rounded-xl border shadow-sm">
+        <div class="border-base-300 flex items-center justify-between border-b px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold">个人工具（职位雷达等）</h2>
+          <button type="button" id="btn-add-tool" class="btn btn-primary btn-xs gap-1">
+            <Icon name="lucide:plus" width={13} height={13} />
+            新增工具
+          </button>
+        </div>
+        <div id="sb-tools-list" class="divide-base-300 divide-y"></div>
+      </div>
+
+      {/* 4. Social Links */}
+      <div class="border-base-300 bg-base-100 rounded-xl border shadow-sm">
+        <div class="border-base-300 flex items-center justify-between border-b px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold">底部社交链接</h2>
+          <button type="button" id="btn-add-social" class="btn btn-primary btn-xs gap-1">
+            <Icon name="lucide:plus" width={13} height={13} />
+            新增社交
+          </button>
+        </div>
+        <div id="sb-socials-list" class="divide-base-300 divide-y"></div>
       </div>
     </section>
 
-    {/* Panel Item Modal */}
+    {/* Sidebar Nav/Social Modal */}
+    <dialog id="sb-link-modal" class="modal">
+      <div class="modal-box max-w-md">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 id="sb-link-modal-title" class="text-lg font-bold">编辑链接</h3>
+          <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+          </form>
+        </div>
+        <form id="sb-link-form" class="space-y-3">
+          <input type="hidden" id="sbl-kind" />
+          <input type="hidden" id="sbl-id" />
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">显示名称 *</span>
+            <input type="text" id="sbl-label" required class="input input-bordered input-sm w-full" />
+          </label>
+          <label id="sbl-label-en-wrap" class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">英文名称（可选）</span>
+            <input type="text" id="sbl-label-en" class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">跳转链接 *</span>
+            <input type="text" id="sbl-href" required placeholder="/about 或 https://..." class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">图标名称</span>
+            <select id="sbl-icon" class="select select-bordered select-sm w-full">
+              <option value="lucide:home">首页 (lucide:home)</option>
+              <option value="lucide:layers">分类 (lucide:layers)</option>
+              <option value="lucide:tag">标签 (lucide:tag)</option>
+              <option value="lucide:archive">归档 (lucide:archive)</option>
+              <option value="lucide:info">关于 (lucide:info)</option>
+              <option value="lucide:activity">监控 (lucide:activity)</option>
+              <option value="lucide:briefcase">工作/简历 (lucide:briefcase)</option>
+              <option value="lucide:wrench">工具 (lucide:wrench)</option>
+              <option value="lucide:globe">网站 (lucide:globe)</option>
+              <option value="lucide:link">链接 (lucide:link)</option>
+              <option value="lucide:mail">邮箱 (lucide:mail)</option>
+              <option value="simple-icons:github">GitHub (simple-icons:github)</option>
+              <option value="simple-icons:x">X / Twitter (simple-icons:x)</option>
+            </select>
+          </label>
+          <label class="flex cursor-pointer items-center gap-2 pt-1 text-sm">
+            <input type="checkbox" id="sbl-hidden" class="toggle toggle-warning toggle-sm" />
+            <span>仅自己可见（对访客隐藏）</span>
+          </label>
+          <div class="modal-action">
+            <button type="button" id="sbl-cancel" class="btn btn-ghost btn-sm">取消</button>
+            <button type="submit" class="btn btn-primary btn-sm">保存</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    {/* Sidebar Tool Modal */}
     <dialog id="panel-modal" class="modal">
       <div class="modal-box max-w-lg">
         <div class="mb-4 flex items-center justify-between">
-          <h3 id="panel-modal-title" class="text-lg font-bold">编辑右侧栏目</h3>
+          <h3 id="panel-modal-title" class="text-lg font-bold">编辑个人工具</h3>
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost">✕</button>
           </form>
@@ -292,7 +388,7 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
             <input type="text" id="pm-eyebrow" placeholder="例如：个人工具" class="input input-bordered input-sm w-full" />
           </label>
           <label class="form-control block">
-            <span class="label-text mb-1 block text-xs font-medium">卡片标题 *</span>
+            <span class="label-text mb-1 block text-xs font-medium">工具标题 *</span>
             <input type="text" id="pm-title" required placeholder="例如：职位雷达" class="input input-bordered input-sm w-full" />
           </label>
           <label class="form-control block">
@@ -460,7 +556,7 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
 
       function openEditor(post = null) {
         viewList?.classList.add('hidden');
-        viewPanel?.classList.add('hidden');
+        viewSidebar?.classList.add('hidden');
         viewEditor?.classList.remove('hidden');
 
         document.getElementById('ed-original-id').value = post?.id || '';
@@ -806,86 +902,179 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
         }
       });
 
-      // Panel Tools management
-      const viewPanel = document.getElementById('view-panel');
+      // Left Sidebar management
+      const viewSidebar = document.getElementById('view-sidebar');
       const adminTabs = document.querySelectorAll('[data-admin-tab]');
-      const panelContainer = document.getElementById('panel-items-container');
+      const sbNavList = document.getElementById('sb-nav-list');
+      const sbToolsList = document.getElementById('sb-tools-list');
+      const sbSocialsList = document.getElementById('sb-socials-list');
+      const sbLinkModal = document.getElementById('sb-link-modal');
+      const sbLinkForm = document.getElementById('sb-link-form');
       const panelModal = document.getElementById('panel-modal');
       const panelForm = document.getElementById('panel-item-form');
-      let panelItems = [];
+
+      let sidebarConfig = {
+        profile: { title: 'Sin', bio: '' },
+        navItems: [],
+        tools: [],
+        socials: [],
+      };
 
       adminTabs.forEach((tab) => {
         tab.addEventListener('click', () => {
           const target = tab.dataset.adminTab;
           adminTabs.forEach((t) => t.classList.remove('tab-active'));
           tab.classList.add('tab-active');
-          if (target === 'panel') {
+          if (target === 'sidebar') {
             viewList?.classList.add('hidden');
             viewEditor?.classList.add('hidden');
-            viewPanel?.classList.remove('hidden');
-            loadPanelItems();
+            viewSidebar?.classList.remove('hidden');
+            loadSidebarConfig();
           } else {
-            viewPanel?.classList.add('hidden');
+            viewSidebar?.classList.add('hidden');
             viewList?.classList.remove('hidden');
           }
         });
       });
 
-      function renderPanelItems() {
-        if (!panelContainer) return;
-        if (panelItems.length === 0) {
-          panelContainer.innerHTML =
-            '<div class="p-8 text-center text-sm text-base-content/60">暂无右侧栏目卡片，点击右上角“新增栏目卡片”添加。</div>';
-          return;
-        }
-        panelContainer.innerHTML = panelItems
-          .map((item) => {
-            const statusBadge = item.hidden
-              ? '<span class="badge badge-warning badge-xs">仅自己可见</span>'
-              : '<span class="badge badge-success badge-xs">公开</span>';
-            const toggleLabel = item.hidden ? '设为公开' : '设为隐藏';
-            const toggleClass = item.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline';
-            return `
-              <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-base-200/40 transition">
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-2">
-                    ${item.eyebrow ? `<span class="badge badge-primary badge-outline badge-xs">${escapeHtml(item.eyebrow)}</span>` : ''}
-                    ${statusBadge}
-                    <h3 class="truncate font-semibold text-base-content">${escapeHtml(item.title)}</h3>
+      function renderSidebarSections() {
+        document.getElementById('sb-title').value = sidebarConfig.profile?.title || '';
+        document.getElementById('sb-bio').value = sidebarConfig.profile?.bio || '';
+
+        if (sbNavList) {
+          sbNavList.innerHTML = sidebarConfig.navItems.length
+            ? sidebarConfig.navItems
+                .map(
+                  (item) => `
+                  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">${escapeHtml(item.label)}</span>
+                        ${item.hidden ? '<span class="badge badge-warning badge-xs">隐藏</span>' : '<span class="badge badge-success badge-xs">公开</span>'}
+                      </div>
+                      <p class="text-base-content/55 truncate text-xs">${escapeHtml(item.href)} · ${escapeHtml(item.icon)}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" class="btn btn-xs ${item.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline'}" data-sb-toggle="navItems" data-id="${escapeHtml(item.id)}">${item.hidden ? '设为公开' : '设为隐藏'}</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-sb-edit="navItems" data-id="${escapeHtml(item.id)}">编辑</button>
+                      <button type="button" class="btn btn-xs btn-ghost text-error" data-sb-delete="navItems" data-id="${escapeHtml(item.id)}">删除</button>
+                    </div>
                   </div>
-                  ${item.description ? `<p class="mt-1 truncate text-xs text-base-content/65">${escapeHtml(item.description)}</p>` : ''}
-                  <p class="mt-1 truncate text-xs text-base-content/50">${escapeHtml(item.href)} · 按钮：${escapeHtml(item.linkText)}</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-                  <button type="button" class="btn btn-xs ${toggleClass}" data-panel-action="toggle" data-id="${escapeHtml(item.id)}" data-hidden="${item.hidden}">
-                    ${toggleLabel}
-                  </button>
-                  <button type="button" class="btn btn-xs btn-ghost" data-panel-action="edit" data-id="${escapeHtml(item.id)}">
-                    编辑
-                  </button>
-                  <button type="button" class="btn btn-xs btn-ghost text-error" data-panel-action="delete" data-id="${escapeHtml(item.id)}" data-title="${escapeHtml(item.title)}">
-                    删除
-                  </button>
-                </div>
-              </div>
-            `;
-          })
-          .join('');
-      }
+                `,
+                )
+                .join('')
+            : '<p class="p-4 text-center text-xs text-base-content/60">暂无导航项</p>';
+        }
 
-      async function loadPanelItems() {
-        try {
-          const res = await fetch('/api/admin/panel');
-          const data = await res.json();
-          panelItems = data.items || [];
-          renderPanelItems();
-        } catch {
-          showToast('加载右侧栏目失败', true);
+        if (sbToolsList) {
+          sbToolsList.innerHTML = sidebarConfig.tools.length
+            ? sidebarConfig.tools
+                .map(
+                  (tool) => `
+                  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        ${tool.eyebrow ? `<span class="badge badge-primary badge-outline badge-xs">${escapeHtml(tool.eyebrow)}</span>` : ''}
+                        <span class="font-medium">${escapeHtml(tool.title)}</span>
+                        ${tool.hidden ? '<span class="badge badge-warning badge-xs">隐藏</span>' : '<span class="badge badge-success badge-xs">公开</span>'}
+                      </div>
+                      <p class="text-base-content/55 truncate text-xs">${escapeHtml(tool.href)} · 按钮：${escapeHtml(tool.linkText)}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" class="btn btn-xs ${tool.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline'}" data-sb-toggle="tools" data-id="${escapeHtml(tool.id)}">${tool.hidden ? '设为公开' : '设为隐藏'}</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-sb-edit="tools" data-id="${escapeHtml(tool.id)}">编辑</button>
+                      <button type="button" class="btn btn-xs btn-ghost text-error" data-sb-delete="tools" data-id="${escapeHtml(tool.id)}">删除</button>
+                    </div>
+                  </div>
+                `,
+                )
+                .join('')
+            : '<p class="p-4 text-center text-xs text-base-content/60">暂无个人工具</p>';
+        }
+
+        if (sbSocialsList) {
+          sbSocialsList.innerHTML = sidebarConfig.socials.length
+            ? sidebarConfig.socials
+                .map(
+                  (s) => `
+                  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">${escapeHtml(s.label)}</span>
+                        ${s.hidden ? '<span class="badge badge-warning badge-xs">隐藏</span>' : '<span class="badge badge-success badge-xs">公开</span>'}
+                      </div>
+                      <p class="text-base-content/55 truncate text-xs">${escapeHtml(s.href)} · ${escapeHtml(s.icon)}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" class="btn btn-xs ${s.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline'}" data-sb-toggle="socials" data-id="${escapeHtml(s.id)}">${s.hidden ? '设为公开' : '设为隐藏'}</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-sb-edit="socials" data-id="${escapeHtml(s.id)}">编辑</button>
+                      <button type="button" class="btn btn-xs btn-ghost text-error" data-sb-delete="socials" data-id="${escapeHtml(s.id)}">删除</button>
+                    </div>
+                  </div>
+                `,
+                )
+                .join('')
+            : '<p class="p-4 text-center text-xs text-base-content/60">暂无社交链接</p>';
         }
       }
 
-      function openPanelModal(item = null) {
-        document.getElementById('panel-modal-title').textContent = item ? '编辑右侧栏目' : '新增右侧栏目';
+      async function loadSidebarConfig() {
+        try {
+          const res = await fetch('/api/admin/sidebar');
+          const data = await res.json();
+          if (data.config) {
+            sidebarConfig = data.config;
+            renderSidebarSections();
+          }
+        } catch {
+          showToast('加载左侧栏目配置失败', true);
+        }
+      }
+
+      async function persistSidebarConfig(msg = '左侧栏目已保存') {
+        try {
+          const res = await fetch('/api/admin/sidebar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sidebarConfig),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '保存失败');
+          sidebarConfig = data.config;
+          renderSidebarSections();
+          showToast(msg);
+        } catch (err) {
+          showToast(err.message || '保存失败', true);
+        }
+      }
+
+      document.getElementById('btn-save-profile')?.addEventListener('click', async () => {
+        sidebarConfig.profile = {
+          title: document.getElementById('sb-title')?.value.trim() || 'Sin',
+          bio: document.getElementById('sb-bio')?.value.trim() || '',
+        };
+        await persistSidebarConfig('个人资料已保存');
+      });
+
+      function openLinkModal(kind, item = null) {
+        document.getElementById('sb-link-modal-title').textContent =
+          (item ? '编辑' : '新增') + (kind === 'navItems' ? '导航菜单' : '社交链接');
+        document.getElementById('sbl-kind').value = kind;
+        document.getElementById('sbl-id').value = item?.id || '';
+        document.getElementById('sbl-label').value = item?.label || '';
+        document.getElementById('sbl-label-en').value = item?.labelEn || '';
+        document.getElementById('sbl-label-en-wrap')?.classList.toggle('hidden', kind !== 'navItems');
+        document.getElementById('sbl-href').value = item?.href || '';
+        const iconSelect = document.getElementById('sbl-icon');
+        if (iconSelect) {
+          iconSelect.value = item?.icon || (kind === 'navItems' ? 'lucide:link' : 'simple-icons:github');
+        }
+        document.getElementById('sbl-hidden').checked = Boolean(item?.hidden);
+        sbLinkModal?.showModal();
+      }
+
+      function openToolModal(item = null) {
+        document.getElementById('panel-modal-title').textContent = item ? '编辑个人工具' : '新增个人工具';
         document.getElementById('pm-id').value = item?.id || '';
         document.getElementById('pm-eyebrow').value = item?.eyebrow || '个人工具';
         document.getElementById('pm-title').value = item?.title || '';
@@ -896,73 +1085,83 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
         panelModal?.showModal();
       }
 
-      document.getElementById('btn-new-panel-item')?.addEventListener('click', () => openPanelModal(null));
+      document.getElementById('btn-add-nav')?.addEventListener('click', () => openLinkModal('navItems', null));
+      document.getElementById('btn-add-social')?.addEventListener('click', () => openLinkModal('socials', null));
+      document.getElementById('btn-add-tool')?.addEventListener('click', () => openToolModal(null));
+      document.getElementById('sbl-cancel')?.addEventListener('click', () => sbLinkModal?.close());
       document.getElementById('pm-cancel')?.addEventListener('click', () => panelModal?.close());
+
+      sbLinkForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kind = document.getElementById('sbl-kind')?.value;
+        const id = document.getElementById('sbl-id')?.value || `${kind}-${Date.now()}`;
+        const nextItem = {
+          id,
+          label: document.getElementById('sbl-label')?.value.trim(),
+          ...(kind === 'navItems'
+            ? { labelEn: document.getElementById('sbl-label-en')?.value.trim() || undefined }
+            : {}),
+          href: document.getElementById('sbl-href')?.value.trim(),
+          icon: document.getElementById('sbl-icon')?.value || 'lucide:link',
+          hidden: Boolean(document.getElementById('sbl-hidden')?.checked),
+        };
+        const list = sidebarConfig[kind] || [];
+        const idx = list.findIndex((x) => x.id === id);
+        if (idx >= 0) list[idx] = nextItem;
+        else list.push(nextItem);
+        sidebarConfig[kind] = list;
+        sbLinkModal?.close();
+        await persistSidebarConfig('已保存并更新左侧栏目');
+      });
 
       panelForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const payload = {
-          id: document.getElementById('pm-id')?.value || undefined,
-          eyebrow: document.getElementById('pm-eyebrow')?.value.trim(),
+        const id = document.getElementById('pm-id')?.value || `tool-${Date.now()}`;
+        const nextTool = {
+          id,
+          eyebrow: document.getElementById('pm-eyebrow')?.value.trim() || '个人工具',
           title: document.getElementById('pm-title')?.value.trim(),
           description: document.getElementById('pm-description')?.value.trim(),
           href: document.getElementById('pm-href')?.value.trim(),
-          linkText: document.getElementById('pm-linktext')?.value.trim(),
-          hidden: document.getElementById('pm-hidden')?.checked,
+          linkText: document.getElementById('pm-linktext')?.value.trim() || '打开',
+          hidden: Boolean(document.getElementById('pm-hidden')?.checked),
         };
-        try {
-          const res = await fetch('/api/admin/panel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || '保存失败');
-          panelModal?.close();
-          showToast('右侧栏目已保存');
-          await loadPanelItems();
-        } catch (err) {
-          showToast(err.message || '保存失败', true);
-        }
+        const idx = sidebarConfig.tools.findIndex((x) => x.id === id);
+        if (idx >= 0) sidebarConfig.tools[idx] = nextTool;
+        else sidebarConfig.tools.push(nextTool);
+        panelModal?.close();
+        await persistSidebarConfig('个人工具已保存');
       });
 
-      panelContainer?.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-panel-action]');
-        if (!btn) return;
-        const action = btn.dataset.panelAction;
-        const id = btn.dataset.id;
-        if (!id) return;
-
-        if (action === 'edit') {
-          const target = panelItems.find((i) => i.id === id);
-          if (target) openPanelModal(target);
-        } else if (action === 'toggle') {
-          const currentlyHidden = btn.dataset.hidden === 'true';
-          try {
-            const res = await fetch('/api/admin/panel', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id, hidden: !currentlyHidden }),
-            });
-            if (!res.ok) throw new Error();
-            showToast(!currentlyHidden ? '已设为仅自己可见' : '已设为公开展示');
-            await loadPanelItems();
-          } catch {
-            showToast('状态切换失败', true);
+      viewSidebar?.addEventListener('click', async (e) => {
+        const toggleBtn = e.target.closest('[data-sb-toggle]');
+        if (toggleBtn) {
+          const kind = toggleBtn.dataset.sbToggle;
+          const id = toggleBtn.dataset.id;
+          const item = (sidebarConfig[kind] || []).find((x) => x.id === id);
+          if (item) {
+            item.hidden = !item.hidden;
+            await persistSidebarConfig(item.hidden ? '已设为仅自己可见' : '已设为公开展示');
           }
-        } else if (action === 'delete') {
-          const title = btn.dataset.title || id;
-          if (!confirm(`确定要删除右侧栏目「${title}」吗？`)) return;
-          try {
-            const res = await fetch(`/api/admin/panel?id=${encodeURIComponent(id)}`, {
-              method: 'DELETE',
-            });
-            if (!res.ok) throw new Error();
-            showToast('右侧栏目已删除');
-            await loadPanelItems();
-          } catch {
-            showToast('删除失败', true);
-          }
+          return;
+        }
+        const editBtn = e.target.closest('[data-sb-edit]');
+        if (editBtn) {
+          const kind = editBtn.dataset.sbEdit;
+          const id = editBtn.dataset.id;
+          const item = (sidebarConfig[kind] || []).find((x) => x.id === id);
+          if (!item) return;
+          if (kind === 'tools') openToolModal(item);
+          else openLinkModal(kind, item);
+          return;
+        }
+        const delBtn = e.target.closest('[data-sb-delete]');
+        if (delBtn) {
+          const kind = delBtn.dataset.sbDelete;
+          const id = delBtn.dataset.id;
+          if (!confirm('确定要删除这一项吗？')) return;
+          sidebarConfig[kind] = (sidebarConfig[kind] || []).filter((x) => x.id !== id);
+          await persistSidebarConfig('已删除');
         }
       });
 

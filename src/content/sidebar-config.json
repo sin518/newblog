@@ -1,0 +1,94 @@
+{
+  "profile": {
+    "title": "Sin",
+    "bio": "全栈开发工程师，AI Agent 工程师"
+  },
+  "navItems": [
+    {
+      "id": "home",
+      "label": "首页",
+      "labelEn": "Home",
+      "href": "/",
+      "icon": "lucide:home",
+      "hidden": false
+    },
+    {
+      "id": "categories",
+      "label": "分类",
+      "labelEn": "Categories",
+      "href": "/categories",
+      "icon": "lucide:layers",
+      "hidden": false
+    },
+    {
+      "id": "tags",
+      "label": "标签",
+      "labelEn": "Tags",
+      "href": "/tags",
+      "icon": "lucide:tag",
+      "hidden": false
+    },
+    {
+      "id": "archives",
+      "label": "归档",
+      "labelEn": "Archives",
+      "href": "/archives",
+      "icon": "lucide:archive",
+      "hidden": false
+    },
+    {
+      "id": "about",
+      "label": "关于",
+      "labelEn": "About",
+      "href": "/about",
+      "icon": "lucide:info",
+      "hidden": false
+    },
+    {
+      "id": "status",
+      "label": "服务器监控",
+      "labelEn": "Status",
+      "href": "https://status.sin518.cfd",
+      "icon": "lucide:activity",
+      "hidden": false
+    }
+  ],
+  "tools": [
+    {
+      "id": "job-radar",
+      "eyebrow": "个人工具",
+      "eyebrowEn": "Personal tool",
+      "title": "职位雷达",
+      "titleEn": "Job Radar",
+      "description": "读取最新招聘信息，集中查看你的个人职位清单。",
+      "descriptionEn": "Track fresh job listings and review your personal shortlist.",
+      "href": "https://jobs.sin518.cfd/",
+      "linkText": "打开职位雷达",
+      "linkTextEn": "Open Job Radar",
+      "hidden": false
+    }
+  ],
+  "socials": [
+    {
+      "id": "github",
+      "label": "GitHub",
+      "href": "https://github.com/sin518",
+      "icon": "simple-icons:github",
+      "hidden": false
+    },
+    {
+      "id": "twitter",
+      "label": "Twitter",
+      "href": "https://x.com/sin518518",
+      "icon": "simple-icons:x",
+      "hidden": false
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "href": "mailto:singdeng518@gmail.com",
+      "icon": "lucide:mail",
+      "hidden": false
+    }
+  ]
+}

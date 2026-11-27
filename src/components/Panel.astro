@@ -1,14 +1,13 @@
 ---
 /**
  * Right-hand panel shown on XL screens, mirrors Chirpy's "Recently Updated"
- * + "Trending Tags" widgets + dynamic personal tool cards.
+ * + "Trending Tags" widgets.
  *
  * On post pages we replace this with the article TOC (handled by PostLayout).
  */
 import type { Locale } from '../config';
 import { useTranslations } from '../i18n/utils';
 import { getPosts, getTagsWithCount, postPath, tagPath } from '../utils/posts';
-import { getPanelTools } from '../lib/panel-tools';
 
 interface Props {
   locale: Locale;
@@ -16,13 +15,11 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = useTranslations(locale);
-const isEnglish = locale === 'en';
 
 const isAdmin = Astro.locals.isAdmin;
-const [posts, tags, panelTools] = await Promise.all([
+const [posts, tags] = await Promise.all([
   getPosts(locale, { includeHidden: isAdmin }),
   getTagsWithCount(locale, { includeHidden: isAdmin }),
-  getPanelTools({ includeHidden: isAdmin }),
 ]);
 
 const recent = posts
@@ -38,48 +35,6 @@ const trending = tags.slice(0, 8);
 ---
 
 <div class="chirpy-panel">
-  {
-    panelTools.length > 0 && (
-      <section class="mb-8 space-y-3">
-        {panelTools.map((item) => {
-          const eyebrow = isEnglish && item.eyebrowEn ? item.eyebrowEn : item.eyebrow;
-          const title = isEnglish && item.titleEn ? item.titleEn : item.title;
-          const desc = isEnglish && item.descriptionEn ? item.descriptionEn : item.description;
-          const linkText = isEnglish && item.linkTextEn ? item.linkTextEn : item.linkText;
-          const isExternal = /^https?:\/\//i.test(item.href);
-
-          return (
-            <div class="border-primary/25 bg-primary/5 rounded-xl border p-3.5">
-              <div class="flex items-center justify-between gap-2">
-                {eyebrow && (
-                  <p class="text-primary text-[11px] font-bold tracking-wider uppercase">
-                    {eyebrow}
-                  </p>
-                )}
-                {item.hidden && (
-                  <span class="badge badge-warning badge-xs">仅自己可见</span>
-                )}
-              </div>
-              <h3 class="text-base-content mt-1 text-sm font-bold">{title}</h3>
-              {desc && (
-                <p class="text-base-content/70 mt-1 text-xs leading-relaxed">{desc}</p>
-              )}
-              <a
-                href={item.href}
-                target={isExternal ? '_blank' : undefined}
-                rel={isExternal ? 'noopener noreferrer' : undefined}
-                class="btn btn-primary btn-xs mt-3 w-full justify-between"
-              >
-                <span>{linkText}</span>
-                <span aria-hidden="true">→</span>
-              </a>
-            </div>
-          );
-        })}
-      </section>
-    )
-  }
-
   {
     recent.length > 0 && (
       <section class="mb-8">

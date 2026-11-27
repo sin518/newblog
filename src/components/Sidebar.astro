@@ -1,13 +1,12 @@
 ---
 /**
- * Chirpy-style fixed left sidebar: avatar + site title + tagline,
- * uppercase vertical nav with icon bullets, theme toggle + social
- * pinned to the bottom.
+ * Chirpy-style fixed left sidebar: avatar (admin login/dashboard entry) +
+ * editable profile + nav + personal tools (e.g. Job Radar) + theme toggle + socials.
  */
 
-import { SITE, NAV, SOCIALS, type Locale } from '../config';
-import { useTranslations, localizedPath, withBase } from '../i18n/utils';
-import type { UIKey } from '../i18n/ui';
+import { SITE, type Locale } from '../config';
+import { localizedPath, withBase } from '../i18n/utils';
+import { getSidebarConfig } from '../lib/sidebar-config';
 import { Icon } from 'astro-icon/components';
 import { Image } from 'astro:assets';
 import ThemeToggle from './islands/ThemeToggle.astro';
@@ -17,32 +16,35 @@ interface Props {
 }
 
 const { locale } = Astro.props;
-const t = useTranslations(locale);
+const isEnglish = locale === 'en';
+const isAdmin = Astro.locals.isAdmin;
 const home = localizedPath('/', locale);
 const avatar = SITE.author.avatar;
 const isStringAvatar = typeof avatar === 'string';
 const avatarSrc = isStringAvatar ? avatar.trim() : '';
 
-const navItems = NAV.map((item) => {
-  const isExternal = /^https?:\/\//.test(item.href);
+const sidebarConfig = await getSidebarConfig({ includeHidden: isAdmin });
+
+const navItems = sidebarConfig.navItems.map((item) => {
+  const isExternal = /^https?:\/\//i.test(item.href);
   return {
     ...item,
     isExternal,
     href: isExternal ? item.href : localizedPath(item.href, locale),
-    label: t(`nav.${item.key}` as UIKey),
+    displayLabel: isEnglish && item.labelEn ? item.labelEn : item.label,
   };
 });
 ---
 
-<aside id="sidebar" class="chirpy-sidebar" aria-label="Sidebar">
+<aside id="sidebar" class="chirpy-sidebar overflow-y-auto" aria-label="Sidebar">
   {/* Profile */}
-  <header class="flex w-full flex-col items-center pt-4 pb-6 text-center">
+  <header class="flex w-full flex-col items-center pt-4 pb-5 text-center">
     <a
-      href={withBase(Astro.locals.isAdmin ? '/admin' : '/login')}
+      href={withBase(isAdmin ? '/admin' : '/login')}
       class="chirpy-avatar border-base-100 grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-full border-4 shadow-sm transition hover:scale-[1.02]"
       style="background:linear-gradient(135deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 70%, white));"
-      aria-label={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
-      title={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
+      aria-label={isAdmin ? '进入管理后台' : '站长登录'}
+      title={isAdmin ? '进入管理后台' : '站长登录'}
     >
       {
         avatar ? (
@@ -69,7 +71,7 @@ const navItems = NAV.map((item) => {
           )
         ) : (
           <span class="text-primary-content flex h-full w-full items-center justify-center text-3xl font-bold">
-            {SITE.title.charAt(0)}
+            {sidebarConfig.profile.title.charAt(0)}
           </span>
         )
       }
@@ -77,13 +79,15 @@ const navItems = NAV.map((item) => {
     <a
       href={home}
       class="text-base-content hover:text-primary mt-4 text-xl font-semibold tracking-wide"
-      aria-label={SITE.title}
+      aria-label={sidebarConfig.profile.title}
     >
-      {SITE.title}
+      {sidebarConfig.profile.title}
     </a>
     {
-      SITE.author.bio && (
-        <p class="text-base-content/70 mt-1 max-w-56 text-sm italic">{SITE.author.bio}</p>
+      sidebarConfig.profile.bio && (
+        <p class="text-base-content/70 mt-1 max-w-56 text-sm italic">
+          {sidebarConfig.profile.bio}
+        </p>
       )
     }
   </header>
@@ -108,8 +112,11 @@ const navItems = NAV.map((item) => {
                 rel={item.isExternal ? 'noopener' : undefined}
                 class="chirpy-nav-link"
               >
-                <Icon name={item.icon ?? 'lucide:home'} width={16} height={16} />
-                <span>{item.label}</span>
+                <Icon name={item.icon || 'lucide:link'} width={16} height={16} />
+                <span class="flex-1 truncate">{item.displayLabel}</span>
+                {item.hidden && (
+                  <span class="badge badge-warning badge-xs">隐藏</span>
+                )}
               </a>
             </li>
           );
@@ -118,21 +125,65 @@ const navItems = NAV.map((item) => {
     </ul>
   </nav>
 
+  {/* Personal tools in left sidebar */}
+  {
+    sidebarConfig.tools.length > 0 && (
+      <div class="mt-4 w-full space-y-2.5 px-1">
+        {sidebarConfig.tools.map((tool) => {
+          const eyebrow = isEnglish && tool.eyebrowEn ? tool.eyebrowEn : tool.eyebrow;
+          const title = isEnglish && tool.titleEn ? tool.titleEn : tool.title;
+          const desc = isEnglish && tool.descriptionEn ? tool.descriptionEn : tool.description;
+          const linkText = isEnglish && tool.linkTextEn ? tool.linkTextEn : tool.linkText;
+          const isExternal = /^https?:\/\//i.test(tool.href);
+
+          return (
+            <div class="border-primary/25 bg-primary/5 rounded-xl border p-3 text-left">
+              <div class="flex items-center justify-between gap-1.5">
+                {eyebrow && (
+                  <p class="text-primary text-[10px] font-bold tracking-wider uppercase">
+                    {eyebrow}
+                  </p>
+                )}
+                {tool.hidden && (
+                  <span class="badge badge-warning badge-xs">隐藏</span>
+                )}
+              </div>
+              <p class="text-base-content mt-0.5 text-sm font-bold">{title}</p>
+              {desc && (
+                <p class="text-base-content/70 mt-1 line-clamp-2 text-xs leading-snug">{desc}</p>
+              )}
+              <a
+                href={tool.href}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noopener noreferrer' : undefined}
+                class="btn btn-primary btn-xs mt-2.5 w-full justify-between"
+              >
+                <span>{linkText}</span>
+                <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    )
+  }
+
   {/* Bottom row: theme toggle + socials */}
   <div
     class="border-base-300 mt-4 flex w-full flex-wrap items-center justify-center gap-2 border-t pt-4"
   >
     <ThemeToggle locale={locale} />
     {
-      SOCIALS.map((s) => (
+      sidebarConfig.socials.map((s) => (
         <a
           href={s.href.startsWith('/') ? withBase(s.href) : s.href}
           rel="noopener"
           class="chirpy-social"
           aria-label={s.label}
+          title={s.hidden ? `${s.label}（仅自己可见）` : s.label}
           target={s.href.startsWith('http') || s.label === 'RSS' ? '_blank' : undefined}
         >
-          <Icon name={s.icon} width={16} height={16} />
+          <Icon name={s.icon || 'lucide:link'} width={16} height={16} />
         </a>
       ))
     }
@@ -174,16 +225,11 @@ const navItems = NAV.map((item) => {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') close();
     });
-    // Close when clicking a sidebar link on mobile
     sidebar.querySelectorAll('a').forEach((a) =>
       a.addEventListener('click', () => {
         if (window.matchMedia('(max-width: 1023px)').matches) close();
       }),
     );
   }
-  // `astro:page-load` fires on the initial load too (when ClientRouter is
-  // present), so we only bind here. Calling setupSidebar() additionally at
-  // module top-level would double-bind handlers and make the toggle a no-op
-  // on the first page (open + close fire on the same click).
   document.addEventListener('astro:page-load', setupSidebar);
 </script>
