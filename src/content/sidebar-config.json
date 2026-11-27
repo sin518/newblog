@@ -50,7 +50,7 @@
       "labelEn": "Status",
       "href": "https://status.sin518.cfd",
       "icon": "lucide:activity",
-      "hidden": false
+      "hidden": true
     }
   ],
   "tools": [
