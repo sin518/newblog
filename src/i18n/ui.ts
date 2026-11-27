@@ -15,6 +15,7 @@ export const messages = {
     'nav.categories': '分类',
     'nav.archives': '归档',
     'nav.about': '关于',
+    'nav.status': '服务器监控',
     'nav.search': '搜索',
     'nav.toggleMenu': '切换菜单',
 
@@ -114,6 +115,7 @@ export const messages = {
     'nav.categories': 'Categories',
     'nav.archives': 'Archives',
     'nav.about': 'About',
+    'nav.status': 'Status',
     'nav.search': 'Search',
     'nav.toggleMenu': 'Toggle menu',
 

@@ -23,11 +23,15 @@ const avatar = SITE.author.avatar;
 const isStringAvatar = typeof avatar === 'string';
 const avatarSrc = isStringAvatar ? avatar.trim() : '';
 
-const navItems = NAV.map((item) => ({
-  ...item,
-  href: localizedPath(item.href, locale),
-  label: t(`nav.${item.key}` as UIKey),
-}));
+const navItems = NAV.map((item) => {
+  const isExternal = /^https?:\/\//.test(item.href);
+  return {
+    ...item,
+    isExternal,
+    href: isExternal ? item.href : localizedPath(item.href, locale),
+    label: t(`nav.${item.key}` as UIKey),
+  };
+});
 ---
 
 <aside id="sidebar" class="chirpy-sidebar" aria-label="Sidebar">
@@ -87,13 +91,16 @@ const navItems = NAV.map((item) => ({
           const stripped = item.href.replace(/\/+$/, '') || '/';
           const current = Astro.url.pathname.replace(/\/+$/, '') || '/';
           const isActive =
-            stripped === current ||
-            (stripped !== home.replace(/\/+$/, '') && current.startsWith(stripped + '/'));
+            !item.isExternal &&
+            (stripped === current ||
+              (stripped !== home.replace(/\/+$/, '') && current.startsWith(stripped + '/')));
           return (
             <li>
               <a
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
+                target={item.isExternal ? '_blank' : undefined}
+                rel={item.isExternal ? 'noopener' : undefined}
                 class="chirpy-nav-link"
               >
                 <Icon name={item.icon ?? 'lucide:home'} width={16} height={16} />
