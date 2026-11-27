@@ -3,6 +3,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import type { APIRoute } from 'astro';
 import { SITE, type Locale } from '~/config';
+import { deleteGitHubFile, isGitHubStoreEnabled, putGitHubFile } from '~/lib/github-store';
 import { getAllPostsForAdmin, postPath, postSlug } from '~/utils/posts';
 
 export const prerender = false;
@@ -136,14 +137,25 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const content = matter.stringify(payload.body ?? '', frontmatter);
-    await fs.mkdir(path.dirname(targetPath), { recursive: true });
-    await fs.writeFile(targetPath, content, 'utf8');
 
-    // Remove old file if renamed / moved locale
-    if (payload.originalId && payload.originalId !== targetId) {
-      const oldPath = resolveSafePostPath(payload.originalId);
-      if (oldPath) {
-        await fs.unlink(oldPath).catch(() => {});
+    if (isGitHubStoreEnabled()) {
+      await putGitHubFile(`src/content/posts/${targetId}`, content, `chore: save post ${targetId}`);
+      if (payload.originalId && payload.originalId !== targetId) {
+        await deleteGitHubFile(
+          `src/content/posts/${payload.originalId}`,
+          `chore: remove old post ${payload.originalId}`,
+        ).catch(() => {});
+      }
+    } else {
+      await fs.mkdir(path.dirname(targetPath), { recursive: true });
+      await fs.writeFile(targetPath, content, 'utf8');
+
+      // Remove old file if renamed / moved locale
+      if (payload.originalId && payload.originalId !== targetId) {
+        const oldPath = resolveSafePostPath(payload.originalId);
+        if (oldPath) {
+          await fs.unlink(oldPath).catch(() => {});
+        }
       }
     }
 

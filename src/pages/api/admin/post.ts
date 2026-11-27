@@ -3,6 +3,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import type { APIRoute } from 'astro';
 import { SITE } from '~/config';
+import { deleteGitHubFile, isGitHubStoreEnabled, putGitHubFile } from '~/lib/github-store';
 
 export const prerender = false;
 
@@ -96,7 +97,16 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (typeof payload.draft === 'boolean') data.draft = payload.draft;
     if (typeof payload.pinned === 'boolean') data.pinned = payload.pinned;
 
-    await fs.writeFile(fullPath, matter.stringify(parsed.content, data), 'utf8');
+    const updatedContent = matter.stringify(parsed.content, data);
+    if (isGitHubStoreEnabled() && payload.id) {
+      await putGitHubFile(
+        `src/content/posts/${payload.id}`,
+        updatedContent,
+        `chore: update post ${payload.id}`,
+      );
+    } else {
+      await fs.writeFile(fullPath, updatedContent, 'utf8');
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
@@ -121,7 +131,11 @@ export const DELETE: APIRoute = async ({ url }) => {
   }
 
   try {
-    await fs.unlink(fullPath);
+    if (isGitHubStoreEnabled() && id) {
+      await deleteGitHubFile(`src/content/posts/${id}`, `chore: delete post ${id}`);
+    } else {
+      await fs.unlink(fullPath);
+    }
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },

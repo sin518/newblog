@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { APIRoute } from 'astro';
+import { isGitHubStoreEnabled, putGitHubFile } from '~/lib/github-store';
 
 export const prerender = false;
 
@@ -50,17 +51,20 @@ export const POST: APIRoute = async ({ request }) => {
 
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const targetDir = path.join(UPLOADS_ROOT, ym);
-    await fs.mkdir(targetDir, { recursive: true });
-
     const safeBase = sanitizeBaseName(file.name);
     const filename = `${Date.now()}-${safeBase}${ext}`;
-    const targetPath = path.join(targetDir, filename);
-
+    const relPath = `${ym}/${filename}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(targetPath, buffer);
 
-    const url = `/uploads/${ym}/${filename}`;
+    if (isGitHubStoreEnabled()) {
+      await putGitHubFile(`public/uploads/${relPath}`, buffer, `chore: upload image ${relPath}`);
+    } else {
+      const targetDir = path.join(UPLOADS_ROOT, ym);
+      await fs.mkdir(targetDir, { recursive: true });
+      await fs.writeFile(path.join(targetDir, filename), buffer);
+    }
+
+    const url = `/uploads/${relPath}`;
     return new Response(
       JSON.stringify({
         ok: true,
@@ -73,8 +77,9 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
       },
     );
-  } catch {
-    return new Response(JSON.stringify({ error: '图片上传失败' }), {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '图片上传失败';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });

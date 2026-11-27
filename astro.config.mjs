@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import mdx from '@astrojs/mdx';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
 import icon from 'astro-icon';
 import expressiveCode from 'astro-expressive-code';
@@ -113,8 +113,8 @@ function rewriteSitemapXslToRelative() {
 export default defineConfig({
   site: SITE.url,
   output: 'server',
-  adapter: node({
-    mode: 'standalone',
+  adapter: vercel({
+    includeFiles: ['src/content/posts'],
   }),
   // GitHub Pages serves the project at https://<user>.github.io/<repo>/,
   // so production builds need `base` to match that subpath — every
