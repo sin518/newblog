@@ -49,6 +49,16 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
       </div>
     </div>
 
+    {/* Top-level Tabs */}
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/70 w-fit p-1">
+      <button type="button" role="tab" class="tab tab-active font-medium" data-admin-tab="posts">
+        文章管理
+      </button>
+      <button type="button" role="tab" class="tab font-medium" data-admin-tab="panel">
+        右侧栏目
+      </button>
+    </div>
+
     {/* List View */}
     <section id="view-list" class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -246,6 +256,72 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
       </form>
     </section>
 
+    {/* Panel Tools Management View */}
+    <section id="view-panel" class="hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-base-content/70 text-sm">
+          管理网站右侧栏目的个人工具与快捷卡片（如“职位雷达”），支持新增、编辑、删除与隐藏控制。
+        </p>
+        <button type="button" id="btn-new-panel-item" class="btn btn-primary btn-sm gap-1.5">
+          <Icon name="lucide:plus" width={15} height={15} />
+          新增栏目卡片
+        </button>
+      </div>
+
+      <div
+        id="panel-items-container"
+        class="border-base-300 bg-base-100 divide-base-300 divide-y overflow-hidden rounded-xl border shadow-sm"
+      >
+        <div class="text-base-content/60 p-8 text-center text-sm">正在加载右侧栏目...</div>
+      </div>
+    </section>
+
+    {/* Panel Item Modal */}
+    <dialog id="panel-modal" class="modal">
+      <div class="modal-box max-w-lg">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 id="panel-modal-title" class="text-lg font-bold">编辑右侧栏目</h3>
+          <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+          </form>
+        </div>
+        <form id="panel-item-form" class="space-y-3">
+          <input type="hidden" id="pm-id" />
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">顶部标签（Eyebrow）</span>
+            <input type="text" id="pm-eyebrow" placeholder="例如：个人工具" class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">卡片标题 *</span>
+            <input type="text" id="pm-title" required placeholder="例如：职位雷达" class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">简介描述</span>
+            <textarea id="pm-description" rows={2} placeholder="简短描述这个工具或链接" class="textarea textarea-bordered textarea-sm w-full"></textarea>
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">跳转链接 *</span>
+            <input type="text" id="pm-href" required placeholder="https://..." class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="form-control block">
+            <span class="label-text mb-1 block text-xs font-medium">按钮文字</span>
+            <input type="text" id="pm-linktext" placeholder="例如：打开职位雷达" class="input input-bordered input-sm w-full" />
+          </label>
+          <label class="flex cursor-pointer items-center gap-2 pt-1 text-sm">
+            <input type="checkbox" id="pm-hidden" class="toggle toggle-warning toggle-sm" />
+            <span>仅自己可见（对访客隐藏）</span>
+          </label>
+          <div class="modal-action">
+            <button type="button" id="pm-cancel" class="btn btn-ghost btn-sm">取消</button>
+            <button type="submit" id="pm-save" class="btn btn-primary btn-sm">保存</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
     {/* Image Gallery Modal */}
     <dialog id="gallery-modal" class="modal">
       <div class="modal-box max-w-3xl">
@@ -384,6 +460,7 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
 
       function openEditor(post = null) {
         viewList?.classList.add('hidden');
+        viewPanel?.classList.add('hidden');
         viewEditor?.classList.remove('hidden');
 
         document.getElementById('ed-original-id').value = post?.id || '';
@@ -726,6 +803,166 @@ const adminUser = Astro.locals.adminUser ?? 'sin';
           document.getElementById('ed-hero').value = heroBtn.dataset.pickHero;
           galleryModal?.close();
           showToast('已设为封面图');
+        }
+      });
+
+      // Panel Tools management
+      const viewPanel = document.getElementById('view-panel');
+      const adminTabs = document.querySelectorAll('[data-admin-tab]');
+      const panelContainer = document.getElementById('panel-items-container');
+      const panelModal = document.getElementById('panel-modal');
+      const panelForm = document.getElementById('panel-item-form');
+      let panelItems = [];
+
+      adminTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.adminTab;
+          adminTabs.forEach((t) => t.classList.remove('tab-active'));
+          tab.classList.add('tab-active');
+          if (target === 'panel') {
+            viewList?.classList.add('hidden');
+            viewEditor?.classList.add('hidden');
+            viewPanel?.classList.remove('hidden');
+            loadPanelItems();
+          } else {
+            viewPanel?.classList.add('hidden');
+            viewList?.classList.remove('hidden');
+          }
+        });
+      });
+
+      function renderPanelItems() {
+        if (!panelContainer) return;
+        if (panelItems.length === 0) {
+          panelContainer.innerHTML =
+            '<div class="p-8 text-center text-sm text-base-content/60">暂无右侧栏目卡片，点击右上角“新增栏目卡片”添加。</div>';
+          return;
+        }
+        panelContainer.innerHTML = panelItems
+          .map((item) => {
+            const statusBadge = item.hidden
+              ? '<span class="badge badge-warning badge-xs">仅自己可见</span>'
+              : '<span class="badge badge-success badge-xs">公开</span>';
+            const toggleLabel = item.hidden ? '设为公开' : '设为隐藏';
+            const toggleClass = item.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline';
+            return `
+              <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-base-200/40 transition">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${item.eyebrow ? `<span class="badge badge-primary badge-outline badge-xs">${escapeHtml(item.eyebrow)}</span>` : ''}
+                    ${statusBadge}
+                    <h3 class="truncate font-semibold text-base-content">${escapeHtml(item.title)}</h3>
+                  </div>
+                  ${item.description ? `<p class="mt-1 truncate text-xs text-base-content/65">${escapeHtml(item.description)}</p>` : ''}
+                  <p class="mt-1 truncate text-xs text-base-content/50">${escapeHtml(item.href)} · 按钮：${escapeHtml(item.linkText)}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <button type="button" class="btn btn-xs ${toggleClass}" data-panel-action="toggle" data-id="${escapeHtml(item.id)}" data-hidden="${item.hidden}">
+                    ${toggleLabel}
+                  </button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-panel-action="edit" data-id="${escapeHtml(item.id)}">
+                    编辑
+                  </button>
+                  <button type="button" class="btn btn-xs btn-ghost text-error" data-panel-action="delete" data-id="${escapeHtml(item.id)}" data-title="${escapeHtml(item.title)}">
+                    删除
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      async function loadPanelItems() {
+        try {
+          const res = await fetch('/api/admin/panel');
+          const data = await res.json();
+          panelItems = data.items || [];
+          renderPanelItems();
+        } catch {
+          showToast('加载右侧栏目失败', true);
+        }
+      }
+
+      function openPanelModal(item = null) {
+        document.getElementById('panel-modal-title').textContent = item ? '编辑右侧栏目' : '新增右侧栏目';
+        document.getElementById('pm-id').value = item?.id || '';
+        document.getElementById('pm-eyebrow').value = item?.eyebrow || '个人工具';
+        document.getElementById('pm-title').value = item?.title || '';
+        document.getElementById('pm-description').value = item?.description || '';
+        document.getElementById('pm-href').value = item?.href || '';
+        document.getElementById('pm-linktext').value = item?.linkText || '打开';
+        document.getElementById('pm-hidden').checked = Boolean(item?.hidden);
+        panelModal?.showModal();
+      }
+
+      document.getElementById('btn-new-panel-item')?.addEventListener('click', () => openPanelModal(null));
+      document.getElementById('pm-cancel')?.addEventListener('click', () => panelModal?.close());
+
+      panelForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          id: document.getElementById('pm-id')?.value || undefined,
+          eyebrow: document.getElementById('pm-eyebrow')?.value.trim(),
+          title: document.getElementById('pm-title')?.value.trim(),
+          description: document.getElementById('pm-description')?.value.trim(),
+          href: document.getElementById('pm-href')?.value.trim(),
+          linkText: document.getElementById('pm-linktext')?.value.trim(),
+          hidden: document.getElementById('pm-hidden')?.checked,
+        };
+        try {
+          const res = await fetch('/api/admin/panel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '保存失败');
+          panelModal?.close();
+          showToast('右侧栏目已保存');
+          await loadPanelItems();
+        } catch (err) {
+          showToast(err.message || '保存失败', true);
+        }
+      });
+
+      panelContainer?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-panel-action]');
+        if (!btn) return;
+        const action = btn.dataset.panelAction;
+        const id = btn.dataset.id;
+        if (!id) return;
+
+        if (action === 'edit') {
+          const target = panelItems.find((i) => i.id === id);
+          if (target) openPanelModal(target);
+        } else if (action === 'toggle') {
+          const currentlyHidden = btn.dataset.hidden === 'true';
+          try {
+            const res = await fetch('/api/admin/panel', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, hidden: !currentlyHidden }),
+            });
+            if (!res.ok) throw new Error();
+            showToast(!currentlyHidden ? '已设为仅自己可见' : '已设为公开展示');
+            await loadPanelItems();
+          } catch {
+            showToast('状态切换失败', true);
+          }
+        } else if (action === 'delete') {
+          const title = btn.dataset.title || id;
+          if (!confirm(`确定要删除右侧栏目「${title}」吗？`)) return;
+          try {
+            const res = await fetch(`/api/admin/panel?id=${encodeURIComponent(id)}`, {
+              method: 'DELETE',
+            });
+            if (!res.ok) throw new Error();
+            showToast('右侧栏目已删除');
+            await loadPanelItems();
+          } catch {
+            showToast('删除失败', true);
+          }
         }
       });
 

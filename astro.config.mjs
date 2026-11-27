@@ -114,7 +114,7 @@ export default defineConfig({
   site: SITE.url,
   output: 'server',
   adapter: vercel({
-    includeFiles: ['src/content/posts'],
+    includeFiles: ['src/content/posts', 'src/content/panel-tools.json'],
   }),
   // GitHub Pages serves the project at https://<user>.github.io/<repo>/,
   // so production builds need `base` to match that subpath — every

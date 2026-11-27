@@ -2,7 +2,6 @@
 import BaseLayout from "~/layouts/BaseLayout.astro";
 import PostList from "~/components/PostList.astro";
 import Pagination from "~/components/Pagination.astro";
-import JobRadarSpotlight from "~/components/JobRadarSpotlight.astro";
 import { SITE } from "~/config";
 import { localizedPath, resolveLocaleParam } from "~/i18n/utils";
 import { getPosts } from "~/utils/posts";
@@ -25,7 +24,6 @@ const hrefForPage = (n: number) =>
   description={SITE.description}
   pathWithoutLocale="/"
 >
-  <JobRadarSpotlight locale={locale} />
   <PostList posts={pagePosts} locale={locale} />
   <Pagination
     currentPage={currentPage}

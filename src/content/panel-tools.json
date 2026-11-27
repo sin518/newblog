@@ -1,0 +1,15 @@
+[
+  {
+    "id": "job-radar",
+    "eyebrow": "个人工具",
+    "eyebrowEn": "Personal tool",
+    "title": "职位雷达",
+    "titleEn": "Job Radar",
+    "description": "读取最新招聘信息，集中查看你的个人职位清单。",
+    "descriptionEn": "Track fresh job listings and review your personal shortlist.",
+    "href": "https://jobs.sin518.cfd/",
+    "linkText": "打开职位雷达",
+    "linkTextEn": "Open Job Radar",
+    "hidden": false
+  }
+]
