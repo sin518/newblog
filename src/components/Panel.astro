@@ -16,7 +16,11 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 
-const [posts, tags] = await Promise.all([getPosts(locale), getTagsWithCount(locale)]);
+const isAdmin = Astro.locals.isAdmin;
+const [posts, tags] = await Promise.all([
+  getPosts(locale, { includeHidden: isAdmin }),
+  getTagsWithCount(locale, { includeHidden: isAdmin }),
+]);
 
 const recent = posts
   .slice()

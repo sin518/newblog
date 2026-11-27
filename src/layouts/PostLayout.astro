@@ -39,7 +39,7 @@ const t = useTranslations(locale);
 const minutes = readingTime(body).minutes;
 
 // Translation siblings (used by language switcher links).
-const translations = await getTranslations(post);
+const translations = await getTranslations(post, { includeHidden: Astro.locals.isAdmin });
 const translationLinks: Partial<Record<Locale, string>> = {};
 for (const [lang, p] of Object.entries(translations)) {
   if (p) translationLinks[lang as Locale] = postPath(p);

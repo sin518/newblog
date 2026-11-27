@@ -1,25 +1,38 @@
 /**
  * Post helpers.
  *
- * Wraps the `astro:content` collection API to:
- *  - filter drafts in production
- *  - infer locale from filesystem path (posts/en/foo -> 'en')
- *  - sort by pubDate desc, with pinned posts first
- *  - group posts by tag / category / month
- *  - resolve translation siblings via `translationKey`
+ * Reads markdown/mdx files directly from `src/content/posts/<locale>/**` so
+ * runtime edits, uploads, and visibility toggles in `/admin` take effect
+ * immediately in SSR mode without requiring a rebuild.
  */
 
-import { getCollection, type CollectionEntry } from 'astro:content';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import matter from 'gray-matter';
+import type { CollectionEntry } from 'astro:content';
 import type { ImageMetadata } from 'astro';
 
 import { SITE, type Locale } from '../config';
 import { withBase } from '../i18n/utils';
 
-export type Post = CollectionEntry<'posts'> & {
-  data: CollectionEntry<'posts'>['data'] & { lang: Locale; translationKey: string };
+export type PostData = CollectionEntry<'posts'>['data'] & {
+  lang: Locale;
+  translationKey: string;
+  hidden: boolean;
 };
 
-const isProd = import.meta.env.PROD;
+export type Post = Omit<CollectionEntry<'posts'>, 'data'> & {
+  data: PostData;
+};
+
+export interface PostQueryOptions {
+  /** Include posts marked `hidden: true` or `draft: true` (for logged-in owner). */
+  includeHidden?: boolean;
+  /** Include `unlisted: true` posts. */
+  includeUnlisted?: boolean;
+}
+
+const POSTS_ROOT = path.resolve(process.cwd(), 'src/content/posts');
 const skipPostCollections = import.meta.env.CI_SKIP_CONTENT_COLLECTIONS === 'true';
 
 /** Derive the locale from `posts/<locale>/foo` slug-ish ID. */
@@ -38,14 +51,112 @@ function stripLocaleFromId(id: string): string {
   return id;
 }
 
-/** Normalize a post entry: ensure `lang` and `translationKey` are set. */
-function normalize(entry: CollectionEntry<'posts'>): Post {
-  const lang = entry.data.lang ?? localeFromId(entry.id);
-  const translationKey = entry.data.translationKey ?? stripLocaleFromId(entry.id);
-  return {
-    ...entry,
-    data: { ...entry.data, lang, translationKey },
-  } as Post;
+async function collectMarkdownFiles(dir: string, baseDir: string): Promise<string[]> {
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const files: string[] = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectMarkdownFiles(full, baseDir)));
+    } else if (entry.isFile() && /\.(md|mdx)$/i.test(entry.name)) {
+      files.push(path.relative(baseDir, full).replace(/\\/g, '/'));
+    }
+  }
+  return files;
+}
+
+function toStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.map((v) => String(v).trim()).filter(Boolean);
+  if (typeof val === 'string') {
+    return val
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function toDate(val: unknown, fallback: Date): Date {
+  if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
+  if (typeof val === 'string' || typeof val === 'number') {
+    const d = new Date(val);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return fallback;
+}
+
+async function loadAllPostsFromDisk(): Promise<Post[]> {
+  if (skipPostCollections) return [];
+  const relFiles = await collectMarkdownFiles(POSTS_ROOT, POSTS_ROOT);
+  const posts: Post[] = [];
+
+  for (const relPath of relFiles) {
+    const fullPath = path.join(POSTS_ROOT, relPath);
+    try {
+      const [raw, stat] = await Promise.all([fs.readFile(fullPath, 'utf8'), fs.stat(fullPath)]);
+      const parsed = matter(raw);
+      const fm = (parsed.data ?? {}) as Record<string, unknown>;
+
+      const inferredLocale = localeFromId(relPath);
+      const lang =
+        typeof fm.lang === 'string' && (SITE.locales as readonly string[]).includes(fm.lang)
+          ? (fm.lang as Locale)
+          : inferredLocale;
+      const stripped = stripLocaleFromId(relPath);
+      const fallbackTitle = stripped.replace(/\.(md|mdx)$/i, '');
+
+      const data: PostData = {
+        title: typeof fm.title === 'string' && fm.title.trim() ? fm.title.trim() : fallbackTitle,
+        description:
+          typeof fm.description === 'string' && fm.description.trim()
+            ? fm.description.trim()
+            : fallbackTitle,
+        pubDate: toDate(fm.pubDate, stat.mtime),
+        updatedDate: fm.updatedDate ? toDate(fm.updatedDate, stat.mtime) : undefined,
+        tags: toStringArray(fm.tags),
+        categories: toStringArray(fm.categories),
+        draft: Boolean(fm.draft),
+        hidden: Boolean(fm.hidden),
+        heroImage: typeof fm.heroImage === 'string' && fm.heroImage.trim() ? fm.heroImage.trim() : undefined,
+        heroImageAlt: typeof fm.heroImageAlt === 'string' ? fm.heroImageAlt : undefined,
+        showFeaturedImage:
+          typeof fm.showFeaturedImage === 'boolean' ? fm.showFeaturedImage : undefined,
+        dynamicPostCardHeight:
+          typeof fm.dynamicPostCardHeight === 'boolean' ? fm.dynamicPostCardHeight : undefined,
+        canonicalURL: typeof fm.canonicalURL === 'string' ? fm.canonicalURL : undefined,
+        comments: typeof fm.comments === 'boolean' ? fm.comments : undefined,
+        toc: typeof fm.toc === 'boolean' ? fm.toc : true,
+        pinned: Boolean(fm.pinned),
+        math: Boolean(fm.math),
+        lang,
+        translationKey:
+          typeof fm.translationKey === 'string' && fm.translationKey.trim()
+            ? fm.translationKey.trim()
+            : stripped,
+        unlisted: Boolean(fm.unlisted),
+        unlistedHideFromSeo:
+          typeof fm.unlistedHideFromSeo === 'boolean' ? fm.unlistedHideFromSeo : undefined,
+      };
+
+      posts.push({
+        id: relPath,
+        collection: 'posts',
+        body: parsed.content,
+        filePath: `src/content/posts/${relPath}`,
+        data,
+      } as Post);
+    } catch {
+      // Skip malformed files rather than crashing the whole listing
+    }
+  }
+
+  return posts;
 }
 
 /** Public slug used for the URL: filename minus locale and extension. */
@@ -56,11 +167,11 @@ export function postSlug(entry: Post): string {
 /** Full localized URL path for a post. */
 export function postPath(entry: Post): string {
   const slug = postSlug(entry);
-  const path =
+  const pathUrl =
     entry.data.lang === SITE.defaultLocale
       ? `/posts/${slug}/`
       : `/${entry.data.lang}/posts/${slug}/`;
-  return withBase(path);
+  return withBase(pathUrl);
 }
 
 /** Sort posts: pinned first, then by pubDate desc. */
@@ -75,10 +186,6 @@ export function sortPosts(posts: Post[]): Post[] {
 
 /**
  * Sort posts strictly by `pubDate` (newest first), ignoring `pinned`.
- *
- * Used for prev/next post navigation: pinned posts shouldn't yank the
- * latest entry to position 0 and break the chronological chain (which
- * would label a newer post as "Previous" of an older pinned post).
  */
 export function sortPostsByDate(posts: Post[]): Post[] {
   return [...posts].sort((a, b) => {
@@ -88,49 +195,65 @@ export function sortPostsByDate(posts: Post[]): Post[] {
   });
 }
 
-/** Get all posts for a locale (drafts + unlisted hidden in prod, sorted). */
-export async function getPosts(locale: Locale): Promise<Post[]> {
-  if (skipPostCollections) return [];
-  const all = await getCollection('posts', (entry) => {
-    if (isProd && entry.data.draft) return false;
-    if (entry.data.unlisted) return false;
-    const lang = entry.data.lang ?? localeFromId(entry.id);
-    return lang === locale;
+/** Get all posts for a locale (respecting draft/hidden/unlisted visibility). */
+export async function getPosts(locale: Locale, options: PostQueryOptions = {}): Promise<Post[]> {
+  const { includeHidden = false, includeUnlisted = false } = options;
+  const all = await loadAllPostsFromDisk();
+  const filtered = all.filter((entry) => {
+    if (entry.data.lang !== locale) return false;
+    if (!includeHidden && (entry.data.draft || entry.data.hidden)) return false;
+    if (!includeUnlisted && entry.data.unlisted) return false;
+    return true;
   });
-  return sortPosts(all.map(normalize));
+  return sortPosts(filtered);
+}
+
+/** Get all posts across all locales (for admin dashboard). */
+export async function getAllPostsForAdmin(): Promise<Post[]> {
+  const all = await loadAllPostsFromDisk();
+  return sortPosts(all);
 }
 
 /**
- * Get unlisted posts for a locale (used only in `getStaticPaths` so
- * their URLs are still generated and accessible by direct link).
- * Drafts are still excluded in production.
+ * Get unlisted posts for a locale.
  */
-export async function getUnlistedPosts(locale: Locale): Promise<Post[]> {
-  if (skipPostCollections) return [];
-  const all = await getCollection('posts', (entry) => {
-    if (isProd && entry.data.draft) return false;
+export async function getUnlistedPosts(
+  locale: Locale,
+  options: PostQueryOptions = {},
+): Promise<Post[]> {
+  const { includeHidden = false } = options;
+  const all = await loadAllPostsFromDisk();
+  const filtered = all.filter((entry) => {
+    if (entry.data.lang !== locale) return false;
     if (!entry.data.unlisted) return false;
-    const lang = entry.data.lang ?? localeFromId(entry.id);
-    return lang === locale;
+    if (!includeHidden && (entry.data.draft || entry.data.hidden)) return false;
+    return true;
   });
-  return sortPosts(all.map(normalize));
+  return sortPosts(filtered);
 }
 
 /** Find a single post by locale + slug (path-relative). */
-export async function getPostBySlug(locale: Locale, slug: string): Promise<Post | undefined> {
-  const posts = await getPosts(locale);
+export async function getPostBySlug(
+  locale: Locale,
+  slug: string,
+  options: PostQueryOptions = {},
+): Promise<Post | undefined> {
+  const posts = await getPosts(locale, { ...options, includeUnlisted: true });
   return posts.find((p) => postSlug(p) === slug);
 }
 
 /** All translation siblings of a post (other locales sharing translationKey). */
-export async function getTranslations(entry: Post): Promise<Record<Locale, Post | undefined>> {
+export async function getTranslations(
+  entry: Post,
+  options: PostQueryOptions = {},
+): Promise<Record<Locale, Post | undefined>> {
   const out: Partial<Record<Locale, Post | undefined>> = {};
   for (const locale of SITE.locales) {
     if (locale === entry.data.lang) {
       out[locale] = entry;
       continue;
     }
-    const all = await getPosts(locale);
+    const all = await getPosts(locale, options);
     out[locale] = all.find((p) => p.data.translationKey === entry.data.translationKey);
   }
   return out as Record<Locale, Post | undefined>;
@@ -139,8 +262,9 @@ export async function getTranslations(entry: Post): Promise<Record<Locale, Post 
 /** Tags for a locale, with counts, sorted by count desc then alpha. */
 export async function getTagsWithCount(
   locale: Locale,
+  options: PostQueryOptions = {},
 ): Promise<Array<{ name: string; count: number }>> {
-  const posts = await getPosts(locale);
+  const posts = await getPosts(locale, options);
   const map = new Map<string, number>();
   for (const p of posts) {
     for (const t of p.data.tags) map.set(t, (map.get(t) ?? 0) + 1);
@@ -153,8 +277,9 @@ export async function getTagsWithCount(
 /** Categories for a locale, with counts. */
 export async function getCategoriesWithCount(
   locale: Locale,
+  options: PostQueryOptions = {},
 ): Promise<Array<{ name: string; count: number }>> {
-  const posts = await getPosts(locale);
+  const posts = await getPosts(locale, options);
   const map = new Map<string, number>();
   for (const p of posts) {
     for (const c of p.data.categories) map.set(c, (map.get(c) ?? 0) + 1);
@@ -200,11 +325,7 @@ export function groupByYearMonth(
 }
 
 /**
- * Resolve whether a post should display its featured (hero) image,
- * considering the per-post override (`showFeaturedImage`) and the
- * site-wide default (`SITE.showFeaturedImages`).
- *
- * Returns `false` when there is no `heroImage` to show.
+ * Resolve whether a post should display its featured (hero) image.
  */
 export function shouldShowHero(post: Post): boolean {
   if (!post.data.heroImage) return false;
@@ -217,20 +338,15 @@ export function heroImageSrc(post: Post): string | undefined {
   if (!img) return undefined;
   let src: string | undefined;
   if (typeof img === 'string') src = img;
-  // Imported asset (ImageMetadata): unwrap to its public URL.
   else if (typeof img === 'object' && 'src' in (img as Record<string, unknown>)) {
     src = (img as { src: string }).src;
   }
   if (!src) return undefined;
-  // Prefix the configured base for absolute paths into /public.
   return src.startsWith('/') && !src.startsWith('//') ? withBase(src) : src;
 }
 
 /**
  * The raw hero image, suitable for passing straight to `<SmartImage>`.
- * Preserves the `ImageMetadata` shape (so the image pipeline can use
- * intrinsic dimensions) for assets imported via the `image()` schema,
- * and prefixes `withBase()` only on plain `/public/...` strings.
  */
 export function heroImage(post: Post): ImageMetadata | string | undefined {
   const img = post.data.heroImage;
@@ -255,14 +371,14 @@ export function slugify(value: string): string {
 /** Build the URL for a tag listing page in a given locale. */
 export function tagPath(locale: Locale, tag: string): string {
   const slug = slugify(tag);
-  const path = locale === SITE.defaultLocale ? `/tags/${slug}/` : `/${locale}/tags/${slug}/`;
-  return withBase(path);
+  const pathUrl = locale === SITE.defaultLocale ? `/tags/${slug}/` : `/${locale}/tags/${slug}/`;
+  return withBase(pathUrl);
 }
 
 /** Build the URL for a category listing page in a given locale. */
 export function categoryPath(locale: Locale, category: string): string {
   const slug = slugify(category);
-  const path =
+  const pathUrl =
     locale === SITE.defaultLocale ? `/categories/${slug}/` : `/${locale}/categories/${slug}/`;
-  return withBase(path);
+  return withBase(pathUrl);
 }

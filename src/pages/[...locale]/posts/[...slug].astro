@@ -1,58 +1,38 @@
 ---
-import { render } from 'astro:content';
 import PostLayout from '~/layouts/PostLayout.astro';
-import { getPosts, getUnlistedPosts, postSlug, sortPostsByDate, type Post } from '~/utils/posts';
+import { resolveLocaleParam } from '~/i18n/utils';
+import { renderMarkdown } from '~/lib/markdown';
+import {
+  getPostBySlug,
+  getPosts,
+  postSlug,
+  sortPostsByDate,
+  type Post,
+} from '~/utils/posts';
 
-interface Props {
-  post: Post;
-  prev?: Post;
-  next?: Post;
-}
+const locale = resolveLocaleParam(Astro.params.locale);
+const slug = Astro.params.slug;
+if (!locale || !slug) return Astro.rewrite('/404');
 
-import { SITE } from '~/config';
-export async function getStaticPaths() {
-  const allLocales = SITE.locales;
+const isAdmin = Astro.locals.isAdmin;
+const post = await getPostBySlug(locale, slug, { includeHidden: isAdmin });
+if (!post) return Astro.rewrite('/404');
 
-  let paths = [];
-  for (const locale of allLocales) {
-    const posts = await getPosts(locale);
-    // Unlisted posts are excluded from all listings but still need a
-    // generated URL so they're accessible by direct link.
-    const unlistedPosts = await getUnlistedPosts(locale);
-    // Prev/next navigation only spans listed posts (unlisted posts are
-    // invisible to readers browsing the site, so linking to them from
-    // prev/next would be confusing).
-    const chronological = sortPostsByDate(posts);
-    const localeParams = { locale: locale === SITE.defaultLocale ? undefined : locale };
+let prev: Post | undefined;
+let next: Post | undefined;
 
-    paths.push(
-      ...posts.map((post) => {
-        const i = chronological.findIndex((p) => p.id === post.id);
-        return {
-          params: { ...localeParams, slug: postSlug(post) },
-          props: {
-            post,
-            prev: chronological[i + 1],
-            next: chronological[i - 1],
-          },
-        };
-      }),
-    );
-
-    // Unlisted posts: generate routes but no prev/next neighbours.
-    paths.push(
-      ...unlistedPosts.map((post) => ({
-        params: { ...localeParams, slug: postSlug(post) },
-        props: { post, prev: undefined, next: undefined },
-      })),
-    );
+if (!post.data.unlisted) {
+  const posts = await getPosts(locale, { includeHidden: isAdmin });
+  const chronological = sortPostsByDate(posts);
+  const idx = chronological.findIndex((p) => postSlug(p) === slug);
+  if (idx !== -1) {
+    prev = chronological[idx + 1];
+    next = chronological[idx - 1];
   }
-  return paths;
 }
 
-const { post, prev, next } = Astro.props as Props;
-const { Content, headings } = await render(post);
 const body = post.body ?? '';
+const { html, headings } = renderMarkdown(body);
 ---
 
 <PostLayout
@@ -61,7 +41,22 @@ const body = post.body ?? '';
   body={body}
   prev={prev}
   next={next}
-  locale={post.id.split('/')[0] as any}
+  locale={locale}
 >
-  <Content />
+  {
+    (post.data.hidden || post.data.draft) && (
+      <div class="alert alert-warning mb-6 flex items-center justify-between text-sm">
+        <span>
+          {post.data.draft ? '当前文章为草稿状态，仅管理员可见。' : '当前文章已设为隐藏，仅管理员可见。'}
+        </span>
+        <a
+          href={`/admin?edit=${encodeURIComponent(post.id)}`}
+          class="btn btn-xs btn-outline"
+        >
+          去后台编辑
+        </a>
+      </div>
+    )
+  }
+  <Fragment set:html={html} />
 </PostLayout>

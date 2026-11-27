@@ -4,18 +4,13 @@ import PostList from "~/components/PostList.astro";
 import Pagination from "~/components/Pagination.astro";
 import JobRadarSpotlight from "~/components/JobRadarSpotlight.astro";
 import { SITE } from "~/config";
-import { localizedPath } from "~/i18n/utils";
+import { localizedPath, resolveLocaleParam } from "~/i18n/utils";
 import { getPosts } from "~/utils/posts";
 
-export function getStaticPaths() {
-  return SITE.locales.map((l) => ({
-    params: { locale: l === SITE.defaultLocale ? undefined : l },
-    props: { locale: l },
-  }));
-}
-const { locale } = Astro.props;
+const locale = resolveLocaleParam(Astro.params.locale);
+if (!locale) return Astro.rewrite("/404");
 
-const posts = await getPosts(locale);
+const posts = await getPosts(locale, { includeHidden: Astro.locals.isAdmin });
 const pageSize = SITE.postsPerPage;
 const lastPage = Math.max(1, Math.ceil(posts.length / pageSize));
 const currentPage = 1;

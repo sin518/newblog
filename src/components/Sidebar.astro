@@ -131,6 +131,14 @@ const navItems = NAV.map((item) => {
         </a>
       ))
     }
+    <a
+      href={withBase(Astro.locals.isAdmin ? '/admin' : '/login')}
+      class:list={['chirpy-social', Astro.locals.isAdmin && 'text-primary']}
+      aria-label={Astro.locals.isAdmin ? '管理后台' : '站长登录'}
+      title={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
+    >
+      <Icon name={Astro.locals.isAdmin ? 'lucide:shield-check' : 'lucide:lock'} width={16} height={16} />
+    </a>
   </div>
 </aside>
 

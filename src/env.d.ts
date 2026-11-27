@@ -11,8 +11,18 @@ interface ImportMetaEnv {
   readonly PUBLIC_GISCUS_CATEGORY?: string;
   readonly PUBLIC_GISCUS_CATEGORY_ID?: string;
   readonly PUBLIC_JOB_RADAR_ENABLED?: string;
+  readonly ADMIN_USERNAME?: string;
+  readonly ADMIN_PASSWORD?: string;
+  readonly AUTH_SECRET?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+declare namespace App {
+  interface Locals {
+    isAdmin: boolean;
+    adminUser: string | null;
+  }
 }

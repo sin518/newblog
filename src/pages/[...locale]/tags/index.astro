@@ -1,20 +1,13 @@
 ---
-import { SITE } from '~/config';
-
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import { useTranslations } from '~/i18n/utils';
+import { useTranslations, resolveLocaleParam } from '~/i18n/utils';
 import { getTagsWithCount, tagPath } from '~/utils/posts';
 import { Icon } from 'astro-icon/components';
 
-export function getStaticPaths() {
-  return SITE.locales.map((l) => ({
-    params: { locale: l === SITE.defaultLocale ? undefined : l },
-    props: { locale: l },
-  }));
-}
-const { locale } = Astro.props;
+const locale = resolveLocaleParam(Astro.params.locale);
+if (!locale) return Astro.rewrite('/404');
 const t = useTranslations(locale);
-const tags = await getTagsWithCount(locale);
+const tags = await getTagsWithCount(locale, { includeHidden: Astro.locals.isAdmin });
 ---
 
 <BaseLayout

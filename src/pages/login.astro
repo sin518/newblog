@@ -1,0 +1,155 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { Icon } from 'astro-icon/components';
+
+export const prerender = false;
+
+const redirectParam = Astro.url.searchParams.get('redirect') || '/admin';
+const safeRedirect = redirectParam.startsWith('/') && !redirectParam.startsWith('//') ? redirectParam : '/admin';
+
+if (Astro.locals.isAdmin) {
+  return Astro.redirect(safeRedirect);
+}
+---
+
+<BaseLayout
+  title="管理员登录"
+  description="仅限站长本人登录管理后台"
+  pathWithoutLocale="/login"
+  hidePanel={true}
+  narrow={true}
+  crumbs={[{ label: '管理员登录' }]}
+>
+  <div class="mx-auto my-8 max-w-md">
+    <div class="border-base-300 bg-base-100 rounded-2xl border p-6 shadow-sm sm:p-8">
+      <div class="mb-6 flex flex-col items-center text-center">
+        <div
+          class="bg-primary/10 text-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
+        >
+          <Icon name="lucide:shield-check" width={24} height={24} />
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">站长登录</h1>
+        <p class="text-base-content/65 mt-1 text-sm">
+          登录后可编辑文章、上传图片并控制项目对外展示状态
+        </p>
+      </div>
+
+      <div
+        id="login-error"
+        role="alert"
+        class="alert alert-error mb-4 hidden text-sm"
+      >
+        <Icon name="lucide:alert-circle" width={16} height={16} />
+        <span id="login-error-text"></span>
+      </div>
+
+      <form id="login-form" class="space-y-4" data-redirect={safeRedirect}>
+        <label class="form-control block w-full">
+          <span class="label-text mb-1.5 block text-sm font-medium">用户名</span>
+          <input
+            type="text"
+            name="username"
+            id="login-username"
+            autocomplete="username"
+            required
+            placeholder="请输入管理员用户名"
+            class="input input-bordered w-full"
+          />
+        </label>
+
+        <label class="form-control block w-full">
+          <span class="label-text mb-1.5 block text-sm font-medium">密码</span>
+          <div class="relative">
+            <input
+              type="password"
+              name="password"
+              id="login-password"
+              autocomplete="current-password"
+              required
+              placeholder="请输入密码"
+              class="input input-bordered w-full pr-10"
+            />
+            <button
+              type="button"
+              id="toggle-password"
+              class="text-base-content/50 hover:text-base-content absolute top-1/2 right-3 -translate-y-1/2"
+              aria-label="显示或隐藏密码"
+            >
+              <Icon name="lucide:eye" width={16} height={16} />
+            </button>
+          </div>
+        </label>
+
+        <button
+          type="submit"
+          id="login-submit"
+          class="btn btn-primary mt-2 w-full"
+        >
+          <span id="login-submit-text">登录后台</span>
+        </button>
+      </form>
+
+      <div class="border-base-300 mt-6 border-t pt-4 text-center">
+        <a href="/" class="text-base-content/65 hover:text-primary text-xs">
+          ← 返回公开主页
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    function initLoginForm() {
+      const form = document.getElementById('login-form');
+      if (!form || form.dataset.bound === 'true') return;
+      form.dataset.bound = 'true';
+
+      const errorBox = document.getElementById('login-error');
+      const errorText = document.getElementById('login-error-text');
+      const submitBtn = document.getElementById('login-submit');
+      const submitText = document.getElementById('login-submit-text');
+      const toggleBtn = document.getElementById('toggle-password');
+      const passwordInput = document.getElementById('login-password');
+
+      toggleBtn?.addEventListener('click', () => {
+        if (!passwordInput) return;
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (errorBox) errorBox.classList.add('hidden');
+
+        const username = document.getElementById('login-username')?.value || '';
+        const password = passwordInput?.value || '';
+
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitText) submitText.textContent = '验证中...';
+
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            if (errorText) errorText.textContent = data.error || '登录失败';
+            if (errorBox) errorBox.classList.remove('hidden');
+            return;
+          }
+          const target = form.dataset.redirect || '/admin';
+          window.location.href = target;
+        } catch {
+          if (errorText) errorText.textContent = '网络错误，请稍后重试';
+          if (errorBox) errorBox.classList.remove('hidden');
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+          if (submitText) submitText.textContent = '登录后台';
+        }
+      });
+    }
+
+    initLoginForm();
+    document.addEventListener('astro:page-load', initLoginForm);
+  </script>
+</BaseLayout>

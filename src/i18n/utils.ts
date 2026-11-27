@@ -35,6 +35,17 @@ export function localePrefix(locale: Locale): string {
 }
 
 /**
+ * Resolve `[...locale]` route parameter in SSR mode.
+ * Returns `SITE.defaultLocale` when undefined, the matching locale if valid,
+ * or `null` if the segment is not a configured locale.
+ */
+export function resolveLocaleParam(param: string | undefined): Locale | null {
+  if (!param) return DEFAULT_LOCALE;
+  if ((SITE.locales as readonly string[]).includes(param)) return param as Locale;
+  return null;
+}
+
+/**
  * Build a localized URL for the given pathname (without locale prefix).
  *
  *   localizedPath('/posts/foo', 'zh') -> '/posts/foo'

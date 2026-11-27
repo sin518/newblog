@@ -1,34 +1,23 @@
 ---
-import { SITE } from '~/config';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import PostList from '~/components/PostList.astro';
-import { useTranslations, localizedPath } from '~/i18n/utils';
+import { useTranslations, localizedPath, resolveLocaleParam } from '~/i18n/utils';
 import { getPosts, getTagsWithCount, slugify } from '~/utils/posts';
 
-interface Props {
-  tagName: string;
-  locale: any;
-}
-
-export async function getStaticPaths() {
-  let paths = [];
-  for (const locale of SITE.locales) {
-    const tags = await getTagsWithCount(locale);
-    const localeParams = { locale: locale === SITE.defaultLocale ? undefined : locale };
-    paths.push(
-      ...tags.map((tag) => ({
-        params: { ...localeParams, tag: slugify(tag.name) },
-        props: { tagName: tag.name, locale },
-      })),
-    );
-  }
-  return paths;
-}
-
-const { tagName, locale } = Astro.props as Props;
+const locale = resolveLocaleParam(Astro.params.locale);
 const { tag } = Astro.params;
+if (!locale || !tag) return Astro.rewrite('/404');
+
+const isAdmin = Astro.locals.isAdmin;
+const tags = await getTagsWithCount(locale, { includeHidden: isAdmin });
+const matched = tags.find((tg) => slugify(tg.name) === tag);
+if (!matched) return Astro.rewrite('/404');
+
+const tagName = matched.name;
 const t = useTranslations(locale);
-const posts = (await getPosts(locale)).filter((p) => p.data.tags.some((tg) => slugify(tg) === tag));
+const posts = (await getPosts(locale, { includeHidden: isAdmin })).filter((p) =>
+  p.data.tags.some((tg) => slugify(tg) === tag),
+);
 ---
 
 <BaseLayout

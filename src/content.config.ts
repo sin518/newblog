@@ -13,7 +13,7 @@
 
 import { defineCollection, type SchemaContext } from 'astro:content';
 import { glob } from 'astro/loaders';
-import { z } from 'zod';
+import { z } from 'astro/zod';
 
 import { SITE } from './config';
 
@@ -69,6 +69,12 @@ const baseFrontmatter = ({ image }: SchemaContext) =>
      * If omitted, falls back to the file slug (relative to the locale folder).
      */
     translationKey: z.string().optional(),
+    /**
+     * Private / selectively hidden posts: excluded from public listings and
+     * inaccessible to unauthenticated visitors, but visible to the logged-in
+     * site owner and toggleable in the admin dashboard.
+     */
+    hidden: z.boolean().default(false),
     /**
      * Unlisted posts/pages are NOT shown in any listing (home, archives,
      * tags, categories, RSS, sitemap) but remain accessible to anyone who

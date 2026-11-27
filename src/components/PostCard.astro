@@ -83,17 +83,27 @@ const isDynamicCardHeight = post.data.dynamicPostCardHeight ?? SITE.dynamicPostC
           }
         </div>
 
-        {
-          post.data.pinned && (
-            <span
-              class="text-primary inline-flex items-center gap-1"
-              title="Pinned"
-              aria-label="Pinned"
-            >
-              <Icon name="lucide:pin" width={14} height={14} />
-            </span>
-          )
-        }
+        <div class="flex items-center gap-2">
+          {
+            (post.data.hidden || post.data.draft) && (
+              <span class="badge badge-warning badge-xs gap-1 font-medium">
+                <Icon name="lucide:eye-off" width={10} height={10} />
+                {post.data.draft ? '草稿' : '仅自己可见'}
+              </span>
+            )
+          }
+          {
+            post.data.pinned && (
+              <span
+                class="text-primary inline-flex items-center gap-1"
+                title="Pinned"
+                aria-label="Pinned"
+              >
+                <Icon name="lucide:pin" width={14} height={14} />
+              </span>
+            )
+          }
+        </div>
       </div>
     </div>
   </a>

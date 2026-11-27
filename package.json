@@ -11,9 +11,9 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && pagefind --site dist --output-subdir _pagefind",
-    "preview": "astro preview",
-    "serve": "bun run build && bun preview",
+    "build": "astro build",
+    "preview": "node --env-file=.env ./dist/server/entry.mjs",
+    "serve": "bun run build && bun run preview",
     "astro": "astro",
     "pagefind": "pagefind --site dist --output-subdir _pagefind",
     "postbuild": "echo \"Pagefind index generated in dist/_pagefind\"",
@@ -25,11 +25,14 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.4",
+    "@astrojs/node": "^10.0.0",
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
-    "astro": "^6.3.1",
+    "astro": "^6.3.3",
     "astro-expressive-code": "^0.42.0",
-    "astro-icon": "^1.1.5"
+    "astro-icon": "^1.1.5",
+    "gray-matter": "^4.0.3",
+    "marked": "^18.3.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

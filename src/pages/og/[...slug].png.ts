@@ -1,50 +1,34 @@
 /**
- * Dynamic OG image endpoint.
- *
- * Generates a 1200×630 PNG for each post that doesn't have a custom
- * heroImage. Posts WITH a heroImage get their image used as the OG
- * directly (handled in the SEO/layout layer) — this endpoint only
- * produces fallback images for posts that lack one.
+ * Dynamic OG image endpoint (SSR).
  *
  * Route: /og/[...slug].png
- * Example: /og/welcome.png → OG image for the "welcome" post (EN)
  */
 /* global Response */
-import type { GetStaticPaths } from 'astro';
+import type { APIRoute } from 'astro';
 import { generateOgImage } from '../../utils/og-image';
-import { getPosts, postSlug, type Post } from '../../utils/posts';
+import { getPostBySlug } from '../../utils/posts';
 import { SITE, type Locale } from '../../config';
 import { formatDate } from '../../i18n/utils';
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  // When autoOgImage is disabled, or skipped via CI flag, generate no OG images.
-  if (!SITE.autoOgImage || import.meta.env.CI_SKIP_AUTO_OG_IMAGE === 'true') return [];
+export const GET: APIRoute = async ({ params, locals }) => {
+  if (!SITE.autoOgImage || import.meta.env.CI_SKIP_AUTO_OG_IMAGE === 'true') {
+    return new Response(null, { status: 404 });
+  }
 
-  const paths: Array<{ params: { slug: string }; props: { post: Post; locale: Locale } }> = [];
+  const rawSlug = params.slug ?? '';
+  let locale: Locale = SITE.defaultLocale;
+  let slug = rawSlug;
 
-  for (const locale of SITE.locales) {
-    const posts = await getPosts(locale);
-    for (const post of posts) {
-      // Generate OG images for ALL posts (even those with heroImage)
-      // so we always have a consistent, optimized fallback.
-      const slug = postSlug(post);
-      const prefix = locale === SITE.defaultLocale ? '' : `${locale}/`;
-      paths.push({
-        params: { slug: `${prefix}${slug}` },
-        props: { post, locale },
-      });
+  for (const loc of SITE.locales) {
+    if (loc !== SITE.defaultLocale && rawSlug.startsWith(`${loc}/`)) {
+      locale = loc;
+      slug = rawSlug.slice(loc.length + 1);
+      break;
     }
   }
-  return paths;
-};
 
-interface Props {
-  post: Post;
-  locale: Locale;
-}
-
-export async function GET({ props }: { props: Props }) {
-  const { post, locale } = props;
+  const post = await getPostBySlug(locale, slug, { includeHidden: locals.isAdmin });
+  if (!post) return new Response(null, { status: 404 });
 
   const date = post.data.pubDate ? formatDate(post.data.pubDate, locale) : undefined;
 
@@ -59,7 +43,7 @@ export async function GET({ props }: { props: Props }) {
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'public, max-age=3600',
     },
   });
-}
+};

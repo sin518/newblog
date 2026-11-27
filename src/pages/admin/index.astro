@@ -1,0 +1,742 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { Icon } from 'astro-icon/components';
+import { SITE } from '~/config';
+
+export const prerender = false;
+
+const adminUser = Astro.locals.adminUser ?? 'sin';
+---
+
+<BaseLayout
+  title="内容管理后台"
+  description="管理文章、编辑内容、上传图片与控制项目可见性"
+  pathWithoutLocale="/admin"
+  hidePanel={true}
+  crumbs={[{ label: '管理后台' }]}
+>
+  <div id="admin-root" class="space-y-6" data-default-locale={SITE.defaultLocale}>
+    {/* Header bar */}
+    <header
+      class="border-base-300 bg-base-100 flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4 shadow-sm sm:px-6"
+    >
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-bold tracking-tight sm:text-2xl">内容管理后台</h1>
+          <span class="badge badge-primary badge-sm">{adminUser}</span>
+        </div>
+        <p class="text-base-content/65 mt-0.5 text-xs sm:text-sm">
+          可在线编辑 Markdown 文章、上传图片，并随时切换项目“公开 / 仅自己可见”状态
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" id="btn-new-post" class="btn btn-primary btn-sm gap-1.5">
+          <Icon name="lucide:plus" width={15} height={15} />
+          新建文章
+        </button>
+        <button type="button" id="btn-logout" class="btn btn-ghost btn-sm gap-1.5">
+          <Icon name="lucide:log-out" width={15} height={15} />
+          退出登录
+        </button>
+      </div>
+    </header>
+
+    {/* Toast notification */}
+    <div id="admin-toast" class="toast toast-end toast-top z-50 hidden">
+      <div id="admin-toast-alert" class="alert alert-success text-sm shadow-lg">
+        <span id="admin-toast-msg"></span>
+      </div>
+    </div>
+
+    {/* List View */}
+    <section id="view-list" class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="join">
+          <button type="button" class="btn btn-sm join-item btn-active" data-filter="all">
+            全部
+          </button>
+          <button type="button" class="btn btn-sm join-item" data-filter="public">
+            公开展示
+          </button>
+          <button type="button" class="btn btn-sm join-item" data-filter="hidden">
+            仅自己可见
+          </button>
+          <button type="button" class="btn btn-sm join-item" data-filter="draft">
+            草稿
+          </button>
+        </div>
+
+        <label class="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
+          <Icon name="lucide:search" width={14} height={14} class="text-base-content/50" />
+          <input type="search" id="list-search" placeholder="搜索标题、标签或分类..." class="grow" />
+        </label>
+      </div>
+
+      <div
+        id="posts-container"
+        class="border-base-300 bg-base-100 divide-base-300 divide-y overflow-hidden rounded-xl border shadow-sm"
+      >
+        <div class="text-base-content/60 p-8 text-center text-sm">正在加载文章列表...</div>
+      </div>
+    </section>
+
+    {/* Editor View */}
+    <section id="view-editor" class="hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <button type="button" id="btn-back-list" class="btn btn-ghost btn-sm gap-1.5">
+          <Icon name="lucide:arrow-left" width={15} height={15} />
+          返回列表
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-toggle-preview" class="btn btn-outline btn-sm gap-1.5">
+            <Icon name="lucide:eye" width={15} height={15} />
+            <span id="preview-btn-text">实时预览</span>
+          </button>
+          <button type="button" id="btn-save-post" class="btn btn-primary btn-sm gap-1.5">
+            <Icon name="lucide:save" width={15} height={15} />
+            <span id="save-btn-text">保存文章</span>
+          </button>
+        </div>
+      </div>
+
+      <form id="editor-form" class="space-y-4">
+        <input type="hidden" id="ed-original-id" />
+
+        <div
+          class="border-base-300 bg-base-100 grid gap-4 rounded-xl border p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <label class="form-control sm:col-span-2">
+            <span class="label-text mb-1 text-xs font-medium">文章标题 *</span>
+            <input
+              type="text"
+              id="ed-title"
+              required
+              placeholder="输入文章或项目标题"
+              class="input input-bordered input-sm w-full"
+            />
+          </label>
+
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">文件名 / Slug</span>
+            <input
+              type="text"
+              id="ed-slug"
+              placeholder="留空则按标题生成"
+              class="input input-bordered input-sm w-full"
+            />
+          </label>
+
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">语言目录</span>
+            <select id="ed-locale" class="select select-bordered select-sm w-full">
+              {SITE.locales.map((loc) => <option value={loc}>{loc}</option>)}
+            </select>
+          </label>
+
+          <label class="form-control sm:col-span-2">
+            <span class="label-text mb-1 text-xs font-medium">摘要描述</span>
+            <input
+              type="text"
+              id="ed-description"
+              placeholder="简短介绍这篇文章或项目"
+              class="input input-bordered input-sm w-full"
+            />
+          </label>
+
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">发布日期</span>
+            <input type="date" id="ed-pubdate" class="input input-bordered input-sm w-full" />
+          </label>
+
+          <label class="form-control">
+            <span class="label-text mb-1 text-xs font-medium">分类（逗号分隔）</span>
+            <input
+              type="text"
+              id="ed-categories"
+              placeholder="例如：开发, AI"
+              class="input input-bordered input-sm w-full"
+            />
+          </label>
+
+          <label class="form-control sm:col-span-2">
+            <span class="label-text mb-1 text-xs font-medium">标签（逗号分隔）</span>
+            <input
+              type="text"
+              id="ed-tags"
+              placeholder="例如：NestJS, LangChain, Astro"
+              class="input input-bordered input-sm w-full"
+            />
+          </label>
+
+          <div class="form-control sm:col-span-2">
+            <span class="label-text mb-1 text-xs font-medium">封面图 URL</span>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="ed-hero"
+                placeholder="/uploads/... 或 https://..."
+                class="input input-bordered input-sm flex-1"
+              />
+              <button type="button" id="btn-upload-hero" class="btn btn-outline btn-sm shrink-0">
+                上传封面
+              </button>
+              <input type="file" id="input-upload-hero" accept="image/*" class="hidden" />
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-5 pt-2 sm:col-span-2 lg:col-span-4">
+            <label class="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" id="ed-hidden" class="toggle toggle-warning toggle-sm" />
+              <span>仅自己可见（对访客隐藏）</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" id="ed-draft" class="toggle toggle-sm" />
+              <span>草稿</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" id="ed-pinned" class="toggle toggle-primary toggle-sm" />
+              <span>置顶</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Markdown Editor + Toolbar */}
+        <div class="border-base-300 bg-base-100 overflow-hidden rounded-xl border shadow-sm">
+          <div
+            class="border-base-300 bg-base-200/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2"
+          >
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                id="btn-upload-inline"
+                class="btn btn-ghost btn-xs gap-1 font-medium"
+              >
+                <Icon name="lucide:image-plus" width={14} height={14} />
+                上传并插入图片
+              </button>
+              <input type="file" id="input-upload-inline" accept="image/*" class="hidden" />
+              <button
+                type="button"
+                id="btn-open-gallery"
+                class="btn btn-ghost btn-xs gap-1 font-medium"
+              >
+                <Icon name="lucide:images" width={14} height={14} />
+                图片库
+              </button>
+            </div>
+            <span class="text-base-content/55 text-xs">支持拖拽或 Ctrl+V 粘贴图片自动上传</span>
+          </div>
+
+          <div id="editor-panes" class="grid grid-cols-1">
+            <textarea
+              id="ed-body"
+              rows={20}
+              placeholder="在这里编写 Markdown 内容..."
+              class="textarea w-full resize-y rounded-none border-0 bg-transparent p-4 font-mono text-sm leading-relaxed focus:outline-none"
+            ></textarea>
+            <div
+              id="ed-preview"
+              class="prose border-base-300 hidden max-w-none overflow-y-auto border-t p-5 lg:border-t-0 lg:border-l"
+            >
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    {/* Image Gallery Modal */}
+    <dialog id="gallery-modal" class="modal">
+      <div class="modal-box max-w-3xl">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-bold">已上传图片库</h3>
+          <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+          </form>
+        </div>
+        <div id="gallery-grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <p class="text-base-content/60 col-span-full py-8 text-center text-sm">加载中...</p>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+  </div>
+
+  <script is:inline>
+    function initAdminPage() {
+      const root = document.getElementById('admin-root');
+      if (!root || root.dataset.bound === 'true') return;
+      root.dataset.bound = 'true';
+
+      const defaultLocale = root.dataset.defaultLocale || 'zh';
+      const viewList = document.getElementById('view-list');
+      const viewEditor = document.getElementById('view-editor');
+      const postsContainer = document.getElementById('posts-container');
+      const searchInput = document.getElementById('list-search');
+      const filterBtns = document.querySelectorAll('[data-filter]');
+
+      let allPosts = [];
+      let activeFilter = 'all';
+      let previewVisible = false;
+
+      function showToast(msg, isError = false) {
+        const toast = document.getElementById('admin-toast');
+        const alertBox = document.getElementById('admin-toast-alert');
+        const text = document.getElementById('admin-toast-msg');
+        if (!toast || !alertBox || !text) return;
+        text.textContent = msg;
+        alertBox.className = `alert text-sm shadow-lg ${isError ? 'alert-error' : 'alert-success'}`;
+        toast.classList.remove('hidden');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.add('hidden'), 2600);
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;');
+      }
+
+      function renderPostList() {
+        if (!postsContainer) return;
+        const q = (searchInput?.value || '').trim().toLowerCase();
+        const filtered = allPosts.filter((p) => {
+          if (activeFilter === 'public' && (p.hidden || p.draft)) return false;
+          if (activeFilter === 'hidden' && !p.hidden) return false;
+          if (activeFilter === 'draft' && !p.draft) return false;
+          if (!q) return true;
+          const hay = [p.title, p.description, ...(p.tags || []), ...(p.categories || [])]
+            .join(' ')
+            .toLowerCase();
+          return hay.includes(q);
+        });
+
+        if (filtered.length === 0) {
+          postsContainer.innerHTML =
+            '<div class="p-8 text-center text-sm text-base-content/60">没有符合条件的文章。</div>';
+          return;
+        }
+
+        postsContainer.innerHTML = filtered
+          .map((p) => {
+            const statusBadge = p.draft
+              ? '<span class="badge badge-neutral badge-xs">草稿</span>'
+              : p.hidden
+                ? '<span class="badge badge-warning badge-xs">仅自己可见</span>'
+                : '<span class="badge badge-success badge-xs">公开</span>';
+            const toggleLabel = p.hidden ? '设为公开' : '设为隐藏';
+            const toggleClass = p.hidden ? 'btn-success btn-outline' : 'btn-warning btn-outline';
+            return `
+              <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-base-200/40 transition">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="badge badge-ghost badge-xs uppercase">${escapeHtml(p.locale)}</span>
+                    ${statusBadge}
+                    ${p.pinned ? '<span class="badge badge-primary badge-xs">置顶</span>' : ''}
+                    <h2 class="truncate font-semibold text-base-content">${escapeHtml(p.title)}</h2>
+                  </div>
+                  <p class="mt-1 truncate text-xs text-base-content/65">${escapeHtml(p.description)}</p>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-base-content/50">
+                    <span>${escapeHtml(p.pubDate)}</span>
+                    ${(p.categories || []).length ? `<span>· 分类: ${escapeHtml(p.categories.join(', '))}</span>` : ''}
+                    ${(p.tags || []).length ? `<span>· 标签: ${escapeHtml(p.tags.join(', '))}</span>` : ''}
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <button type="button" class="btn btn-xs ${toggleClass}" data-action="toggle-hidden" data-id="${escapeHtml(p.id)}" data-hidden="${p.hidden}">
+                    ${toggleLabel}
+                  </button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-action="edit" data-id="${escapeHtml(p.id)}">
+                    编辑
+                  </button>
+                  <a href="${escapeHtml(p.url)}" target="_blank" class="btn btn-xs btn-ghost">
+                    查看
+                  </a>
+                  <button type="button" class="btn btn-xs btn-ghost text-error" data-action="delete" data-id="${escapeHtml(p.id)}" data-title="${escapeHtml(p.title)}">
+                    删除
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      async function loadPosts() {
+        try {
+          const res = await fetch('/api/admin/posts');
+          if (res.status === 401) {
+            window.location.href = '/login?redirect=/admin';
+            return;
+          }
+          const data = await res.json();
+          allPosts = data.posts || [];
+          renderPostList();
+        } catch {
+          showToast('加载文章列表失败', true);
+        }
+      }
+
+      function openEditor(post = null) {
+        viewList?.classList.add('hidden');
+        viewEditor?.classList.remove('hidden');
+
+        document.getElementById('ed-original-id').value = post?.id || '';
+        document.getElementById('ed-title').value = post?.title || '';
+        document.getElementById('ed-slug').value = post?.slug || '';
+        document.getElementById('ed-locale').value = post?.locale || defaultLocale;
+        document.getElementById('ed-description').value = post?.description || '';
+        document.getElementById('ed-pubdate').value =
+          post?.pubDate || new Date().toISOString().slice(0, 10);
+        document.getElementById('ed-categories').value = (post?.categories || []).join(', ');
+        document.getElementById('ed-tags').value = (post?.tags || []).join(', ');
+        document.getElementById('ed-hero').value = post?.heroImage || '';
+        document.getElementById('ed-hidden').checked = Boolean(post?.hidden);
+        document.getElementById('ed-draft').checked = Boolean(post?.draft);
+        document.getElementById('ed-pinned').checked = Boolean(post?.pinned);
+        document.getElementById('ed-body').value = post?.body || '';
+
+        if (previewVisible) refreshPreview();
+      }
+
+      function closeEditor() {
+        viewEditor?.classList.add('hidden');
+        viewList?.classList.remove('hidden');
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('edit')) {
+          url.searchParams.delete('edit');
+          window.history.replaceState({}, '', url.toString());
+        }
+      }
+
+      async function editPostById(id) {
+        try {
+          const res = await fetch(`/api/admin/post?id=${encodeURIComponent(id)}`);
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || '读取文章失败', true);
+            return;
+          }
+          openEditor(data);
+        } catch {
+          showToast('读取文章失败', true);
+        }
+      }
+
+      async function refreshPreview() {
+        const previewEl = document.getElementById('ed-preview');
+        const bodyEl = document.getElementById('ed-body');
+        if (!previewEl || !bodyEl) return;
+        try {
+          const res = await fetch('/api/admin/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ markdown: bodyEl.value }),
+          });
+          const data = await res.json();
+          previewEl.innerHTML = data.html || '';
+        } catch {
+          previewEl.innerHTML = '<p class="text-error">预览加载失败</p>';
+        }
+      }
+
+      async function uploadFile(file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '上传失败');
+        return data;
+      }
+
+      function insertAtCursor(textarea, text) {
+        const start = textarea.selectionStart ?? textarea.value.length;
+        const end = textarea.selectionEnd ?? textarea.value.length;
+        const before = textarea.value.slice(0, start);
+        const after = textarea.value.slice(end);
+        textarea.value = before + text + after;
+        const pos = start + text.length;
+        textarea.setSelectionRange(pos, pos);
+        textarea.focus();
+        if (previewVisible) refreshPreview();
+      }
+
+      // Filter & Search
+      filterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach((b) => b.classList.remove('btn-active'));
+          btn.classList.add('btn-active');
+          activeFilter = btn.dataset.filter || 'all';
+          renderPostList();
+        });
+      });
+      searchInput?.addEventListener('input', renderPostList);
+
+      // List item actions
+      postsContainer?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        if (!id) return;
+
+        if (action === 'edit') {
+          await editPostById(id);
+        } else if (action === 'toggle-hidden') {
+          const currentlyHidden = btn.dataset.hidden === 'true';
+          try {
+            const res = await fetch('/api/admin/post', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, hidden: !currentlyHidden }),
+            });
+            if (!res.ok) throw new Error();
+            showToast(!currentlyHidden ? '已设为仅自己可见' : '已设为公开展示');
+            await loadPosts();
+          } catch {
+            showToast('状态切换失败', true);
+          }
+        } else if (action === 'delete') {
+          const title = btn.dataset.title || id;
+          if (!confirm(`确定要删除文章《${title}》吗？此操作不可恢复。`)) return;
+          try {
+            const res = await fetch(`/api/admin/post?id=${encodeURIComponent(id)}`, {
+              method: 'DELETE',
+            });
+            if (!res.ok) throw new Error();
+            showToast('文章已删除');
+            await loadPosts();
+          } catch {
+            showToast('删除失败', true);
+          }
+        }
+      });
+
+      // Header buttons
+      document.getElementById('btn-new-post')?.addEventListener('click', () => openEditor(null));
+      document.getElementById('btn-back-list')?.addEventListener('click', closeEditor);
+      document.getElementById('btn-logout')?.addEventListener('click', async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      });
+
+      // Preview toggle
+      document.getElementById('btn-toggle-preview')?.addEventListener('click', () => {
+        previewVisible = !previewVisible;
+        const panes = document.getElementById('editor-panes');
+        const previewEl = document.getElementById('ed-preview');
+        const btnText = document.getElementById('preview-btn-text');
+        if (previewVisible) {
+          panes?.classList.add('lg:grid-cols-2');
+          previewEl?.classList.remove('hidden');
+          if (btnText) btnText.textContent = '关闭预览';
+          refreshPreview();
+        } else {
+          panes?.classList.remove('lg:grid-cols-2');
+          previewEl?.classList.add('hidden');
+          if (btnText) btnText.textContent = '实时预览';
+        }
+      });
+
+      // Save post
+      document.getElementById('btn-save-post')?.addEventListener('click', async () => {
+        const title = document.getElementById('ed-title')?.value.trim();
+        if (!title) {
+          showToast('请填写文章标题', true);
+          return;
+        }
+        const saveBtn = document.getElementById('btn-save-post');
+        const saveText = document.getElementById('save-btn-text');
+        if (saveBtn) saveBtn.disabled = true;
+        if (saveText) saveText.textContent = '保存中...';
+
+        try {
+          const payload = {
+            originalId: document.getElementById('ed-original-id')?.value || undefined,
+            title,
+            slug: document.getElementById('ed-slug')?.value.trim(),
+            locale: document.getElementById('ed-locale')?.value || defaultLocale,
+            description: document.getElementById('ed-description')?.value.trim(),
+            pubDate: document.getElementById('ed-pubdate')?.value,
+            categories: document.getElementById('ed-categories')?.value,
+            tags: document.getElementById('ed-tags')?.value,
+            heroImage: document.getElementById('ed-hero')?.value.trim(),
+            hidden: document.getElementById('ed-hidden')?.checked,
+            draft: document.getElementById('ed-draft')?.checked,
+            pinned: document.getElementById('ed-pinned')?.checked,
+            body: document.getElementById('ed-body')?.value ?? '',
+          };
+
+          const res = await fetch('/api/admin/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '保存失败');
+
+          document.getElementById('ed-original-id').value = data.id;
+          showToast('文章已保存并实时生效');
+          await loadPosts();
+        } catch (err) {
+          showToast(err.message || '保存失败', true);
+        } finally {
+          if (saveBtn) saveBtn.disabled = false;
+          if (saveText) saveText.textContent = '保存文章';
+        }
+      });
+
+      // Upload hero image
+      const heroFileInput = document.getElementById('input-upload-hero');
+      document.getElementById('btn-upload-hero')?.addEventListener('click', () => {
+        heroFileInput?.click();
+      });
+      heroFileInput?.addEventListener('change', async () => {
+        const file = heroFileInput.files?.[0];
+        if (!file) return;
+        try {
+          const data = await uploadFile(file);
+          document.getElementById('ed-hero').value = data.url;
+          showToast('封面图上传成功');
+        } catch (err) {
+          showToast(err.message || '上传失败', true);
+        } finally {
+          heroFileInput.value = '';
+        }
+      });
+
+      // Upload inline image
+      const inlineFileInput = document.getElementById('input-upload-inline');
+      const bodyTextarea = document.getElementById('ed-body');
+      document.getElementById('btn-upload-inline')?.addEventListener('click', () => {
+        inlineFileInput?.click();
+      });
+      inlineFileInput?.addEventListener('change', async () => {
+        const file = inlineFileInput.files?.[0];
+        if (!file || !bodyTextarea) return;
+        try {
+          const data = await uploadFile(file);
+          insertAtCursor(bodyTextarea, `\n${data.markdown}\n`);
+          showToast('图片已上传并插入正文');
+        } catch (err) {
+          showToast(err.message || '上传失败', true);
+        } finally {
+          inlineFileInput.value = '';
+        }
+      });
+
+      // Drag & drop or paste image into textarea
+      bodyTextarea?.addEventListener('paste', async (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const file = item.getAsFile();
+            if (!file) continue;
+            try {
+              const data = await uploadFile(file);
+              insertAtCursor(bodyTextarea, `\n${data.markdown}\n`);
+              showToast('粘贴图片上传成功');
+            } catch (err) {
+              showToast(err.message || '上传失败', true);
+            }
+          }
+        }
+      });
+
+      bodyTextarea?.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer?.files;
+        if (!files || files.length === 0) return;
+        const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+        if (imageFiles.length === 0) return;
+        e.preventDefault();
+        for (const file of imageFiles) {
+          try {
+            const data = await uploadFile(file);
+            insertAtCursor(bodyTextarea, `\n${data.markdown}\n`);
+            showToast('拖拽图片上传成功');
+          } catch (err) {
+            showToast(err.message || '上传失败', true);
+          }
+        }
+      });
+
+      // Live preview debounce
+      let previewTimer;
+      bodyTextarea?.addEventListener('input', () => {
+        if (!previewVisible) return;
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(refreshPreview, 250);
+      });
+
+      // Image gallery modal
+      const galleryModal = document.getElementById('gallery-modal');
+      const galleryGrid = document.getElementById('gallery-grid');
+      document.getElementById('btn-open-gallery')?.addEventListener('click', async () => {
+        galleryModal?.showModal();
+        if (!galleryGrid) return;
+        galleryGrid.innerHTML =
+          '<p class="col-span-full py-8 text-center text-sm text-base-content/60">加载中...</p>';
+        try {
+          const res = await fetch('/api/admin/images');
+          const data = await res.json();
+          const images = data.images || [];
+          if (images.length === 0) {
+            galleryGrid.innerHTML =
+              '<p class="col-span-full py-8 text-center text-sm text-base-content/60">暂无已上传图片，可直接点击“上传并插入图片”。</p>';
+            return;
+          }
+          galleryGrid.innerHTML = images
+            .map(
+              (img) => `
+              <div class="border-base-300 group overflow-hidden rounded-lg border p-2">
+                <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}" class="h-24 w-full rounded object-cover" loading="lazy" />
+                <div class="mt-2 flex gap-1">
+                  <button type="button" class="btn btn-xs btn-primary flex-1" data-pick-insert="${escapeHtml(img.url)}" data-name="${escapeHtml(img.name)}">插入</button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-pick-hero="${escapeHtml(img.url)}">封面</button>
+                </div>
+              </div>
+            `,
+            )
+            .join('');
+        } catch {
+          galleryGrid.innerHTML =
+            '<p class="col-span-full py-8 text-center text-sm text-error">加载图片库失败</p>';
+        }
+      });
+
+      galleryGrid?.addEventListener('click', (e) => {
+        const insertBtn = e.target.closest('[data-pick-insert]');
+        if (insertBtn && bodyTextarea) {
+          const url = insertBtn.dataset.pickInsert;
+          const name = insertBtn.dataset.name || 'image';
+          insertAtCursor(bodyTextarea, `\n![${name}](${url})\n`);
+          galleryModal?.close();
+          showToast('已插入图片');
+          return;
+        }
+        const heroBtn = e.target.closest('[data-pick-hero]');
+        if (heroBtn) {
+          document.getElementById('ed-hero').value = heroBtn.dataset.pickHero;
+          galleryModal?.close();
+          showToast('已设为封面图');
+        }
+      });
+
+      // Init
+      loadPosts().then(() => {
+        const editId = new URL(window.location.href).searchParams.get('edit');
+        if (editId) editPostById(editId);
+      });
+    }
+
+    initAdminPage();
+    document.addEventListener('astro:page-load', initAdminPage);
+  </script>
+</BaseLayout>
