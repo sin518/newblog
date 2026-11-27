@@ -37,44 +37,49 @@ const navItems = NAV.map((item) => {
 <aside id="sidebar" class="chirpy-sidebar" aria-label="Sidebar">
   {/* Profile */}
   <header class="flex w-full flex-col items-center pt-4 pb-6 text-center">
-    <a href={home} class="flex flex-col items-center" aria-label={SITE.title}>
-      <span
-        class="chirpy-avatar border-base-100 grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-full border-4 shadow-sm transition hover:scale-[1.02]"
-        style="background:linear-gradient(135deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 70%, white));"
-      >
-        {
-          avatar ? (
-            isStringAvatar ? (
-              <img
-                src={avatarSrc.startsWith('/') ? withBase(avatarSrc) : avatarSrc}
-                alt={SITE.author.name}
-                width="112"
-                height="112"
-                class="block h-full w-full object-cover object-center"
-                loading="eager"
-                decoding="async"
-              />
-            ) : (
-              <Image
-                src={avatar}
-                alt={SITE.author.name}
-                width={112}
-                height={112}
-                class="block h-full w-full object-cover object-center"
-                loading="eager"
-                decoding="async"
-              />
-            )
+    <a
+      href={withBase(Astro.locals.isAdmin ? '/admin' : '/login')}
+      class="chirpy-avatar border-base-100 grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-full border-4 shadow-sm transition hover:scale-[1.02]"
+      style="background:linear-gradient(135deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 70%, white));"
+      aria-label={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
+      title={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
+    >
+      {
+        avatar ? (
+          isStringAvatar ? (
+            <img
+              src={avatarSrc.startsWith('/') ? withBase(avatarSrc) : avatarSrc}
+              alt={SITE.author.name}
+              width="112"
+              height="112"
+              class="block h-full w-full object-cover object-center"
+              loading="eager"
+              decoding="async"
+            />
           ) : (
-            <span class="text-primary-content flex h-full w-full items-center justify-center text-3xl font-bold">
-              {SITE.title.charAt(0)}
-            </span>
+            <Image
+              src={avatar}
+              alt={SITE.author.name}
+              width={112}
+              height={112}
+              class="block h-full w-full object-cover object-center"
+              loading="eager"
+              decoding="async"
+            />
           )
-        }
-      </span>
-      <span class="text-base-content hover:text-primary mt-4 text-xl font-semibold tracking-wide">
-        {SITE.title}
-      </span>
+        ) : (
+          <span class="text-primary-content flex h-full w-full items-center justify-center text-3xl font-bold">
+            {SITE.title.charAt(0)}
+          </span>
+        )
+      }
+    </a>
+    <a
+      href={home}
+      class="text-base-content hover:text-primary mt-4 text-xl font-semibold tracking-wide"
+      aria-label={SITE.title}
+    >
+      {SITE.title}
     </a>
     {
       SITE.author.bio && (
@@ -131,14 +136,6 @@ const navItems = NAV.map((item) => {
         </a>
       ))
     }
-    <a
-      href={withBase(Astro.locals.isAdmin ? '/admin' : '/login')}
-      class:list={['chirpy-social', Astro.locals.isAdmin && 'text-primary']}
-      aria-label={Astro.locals.isAdmin ? '管理后台' : '站长登录'}
-      title={Astro.locals.isAdmin ? '进入管理后台' : '站长登录'}
-    >
-      <Icon name={Astro.locals.isAdmin ? 'lucide:shield-check' : 'lucide:lock'} width={16} height={16} />
-    </a>
   </div>
 </aside>
 
